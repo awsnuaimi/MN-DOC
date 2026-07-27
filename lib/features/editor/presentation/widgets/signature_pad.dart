@@ -37,6 +37,7 @@ class _SignaturePadWidgetState extends State<SignaturePadWidget> {
               onPressed: () async {
                 if (_controller.isEmpty) return;
                 final imageBytes = await _controller.toPngBytes();
+                if (!mounted) return;   // <-- فحص mounted بعد الانتظار
                 if (imageBytes != null) {
                   final image = MemoryImage(imageBytes);
                   widget.onSignatureSaved(image);

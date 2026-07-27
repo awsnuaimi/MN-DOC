@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../logic/editor_provider.dart';
 import '../../../scanner/logic/scanner_provider.dart';
 import '../../../scanner/data/models/scanned_image.dart';
@@ -54,7 +53,7 @@ class _EditorScreenState extends State<EditorScreen> {
     setState(() => _isSaving = true);
     final editor = context.read<EditorProvider>();
     final newPath = await editor.saveMergedImage(backgroundImagePath!);
-    if (!mounted) return;
+    if (!mounted) return;               // <-- فحص mounted بعد الانتظار
     if (newPath != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تم حفظ التعديلات (التوقيع)')),
