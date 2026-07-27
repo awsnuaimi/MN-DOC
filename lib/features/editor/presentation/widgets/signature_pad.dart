@@ -37,12 +37,13 @@ class _SignaturePadWidgetState extends State<SignaturePadWidget> {
             ElevatedButton(
               onPressed: () async {
                 if (_controller.isEmpty) return;
+                final navigator = Navigator.of(context);
                 final imageBytes = await _controller.toPngBytes();
                 if (!mounted) return;
                 if (imageBytes != null) {
                   final image = MemoryImage(imageBytes);
                   widget.onSignatureSaved(image, imageBytes);
-                  Navigator.pop(context);
+                  navigator.pop();
                 }
               },
               child: const Text('حفظ التوقيع'),

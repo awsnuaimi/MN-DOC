@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pdf/pdf.dart';
@@ -11,7 +10,7 @@ import '../../../scanner/data/models/scanned_image.dart';
 import '../widgets/signature_pad.dart';
 
 class EditorScreen extends StatefulWidget {
-  const EditorScreen({Key? key}) : super(key: key);
+  const EditorScreen({super.key});
 
   @override
   State<EditorScreen> createState() => _EditorScreenState();
