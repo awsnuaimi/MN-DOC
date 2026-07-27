@@ -1,0 +1,28 @@
+name: mn_doc
+description: A document scanner and editor app.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.1        # إدارة الحالة
+  get_it: ^7.6.4           # حقن التبعية
+  go_router: ^13.0.0       # التوجيه
+  sqflite: ^2.3.0          # قاعدة بيانات محلية
+  path_provider: ^2.1.1    # مسارات التخزين
+  # حزم أخرى سنضيفها لاحقاً: camera, pdf, signature...
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/fonts/
