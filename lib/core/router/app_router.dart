@@ -1,7 +1,10 @@
 import 'package:go_router/go_router.dart';
-import '../../features/splash/presentation/screens/splash_screen.dart'; // أضف
+import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
-// ... باقي الاستيرادات
+import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/scanner/presentation/screens/scanner_screen.dart';
+import '../../features/editor/presentation/screens/editor_screen.dart';
+import '../widgets/app_shell.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -14,7 +17,6 @@ final appRouter = GoRouter(
       builder: (context, state, navigationShell) =>
           AppShell(navigationShell: navigationShell),
       branches: [
-        // ... باقي الفروع
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -41,7 +43,6 @@ final appRouter = GoRouter(
         ),
       ],
     ),
-    // المحرر يبقى خارج التبويبات
     GoRoute(
       path: '/editor',
       builder: (context, state) => const EditorScreen(),
