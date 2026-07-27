@@ -9,14 +9,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  provider: ^6.1.1        # إدارة الحالة
-  get_it: ^7.6.4           # حقن التبعية
-  go_router: ^13.0.0       # التوجيه
-  sqflite: ^2.3.0          # قاعدة بيانات محلية
-  path_provider: ^2.1.1    # مسارات التخزين
-  # حزم أخرى سنضيفها لاحقاً: camera, pdf, signature...
+  provider: ^6.1.1
+  get_it: ^7.6.4
+  go_router: ^13.0.0
+  sqflite: ^2.3.0
+  path_provider: ^2.1.1
   image_picker: ^1.0.7
-
+  path: ^1.8.3                     # <-- أضف هذا
 dev_dependencies:
   flutter_test:
     sdk: flutter

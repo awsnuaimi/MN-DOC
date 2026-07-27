@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';   // <-- أضف هذا الاستيراد
 import '../../logic/scanner_provider.dart';
-import '../../data/models/scanned_image.dart';
 import 'dart:io';
 
 class ScannerScreen extends StatelessWidget {

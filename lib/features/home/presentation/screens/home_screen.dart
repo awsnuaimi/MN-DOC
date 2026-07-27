@@ -27,18 +27,8 @@ class HomeScreen extends StatelessWidget {
               style: TextStyle(fontSize: 18, color: Colors.grey[600]),
             ),
             const SizedBox(height: 30),
-            ًElevatedButton.icon(
-             onPressed: () => context.go('/scanner'),   // <-- التعديل هنا
-              icon: const Icon(Icons.document_scanner),
-              label: const Text('مسح مستند جديد'),
-               style: ElevatedButton.styleFrom(
-               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-  ),
-),
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('الماسح الضوئي قريباً!')),
-                );
-              },
+            ElevatedButton.icon(
+              onPressed: () => context.go('/scanner'),
               icon: const Icon(Icons.document_scanner),
               label: const Text('مسح مستند جديد'),
               style: ElevatedButton.styleFrom(

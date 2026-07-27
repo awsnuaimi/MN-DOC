@@ -17,21 +17,22 @@ class LocalDB {
   }
 
   Future<void> _onCreate(Database db, int version) async {
-  await db.execute('''
-    CREATE TABLE profile(
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      email TEXT,
-      phone TEXT
-    )
-  ''');
+    await db.execute('''
+      CREATE TABLE profile(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT,
+        phone TEXT
+      )
+    ''');
 
-  await db.execute('''
-    CREATE TABLE scanned_images(
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      filePath TEXT,
-      title TEXT,
-      createdAt TEXT
-    )
-  ''');
+    await db.execute('''
+      CREATE TABLE scanned_images(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        filePath TEXT,
+        title TEXT,
+        createdAt TEXT
+      )
+    ''');
+  }
 }
