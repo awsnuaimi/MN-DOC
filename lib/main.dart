@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/di/injection_container.dart';
-import 'core/theme/app_theme.dart';
+import 'core/theme/app_theme.dart';               // <-- يجب أن يكون موجودًا
 import 'core/router/app_router.dart';
 import 'features/settings/logic/settings_provider.dart';
 
@@ -19,15 +19,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // يمكن إضافة Providers عالميين هنا،
-        // لكننا سنضيفهم حسب الحاجة.
         ChangeNotifierProvider<SettingsProvider>(
           create: (_) => sl<SettingsProvider>(),
         ),
       ],
       child: MaterialApp.router(
         title: 'MN Doc',
-        theme: AppTheme.lightTheme,
+        theme: AppTheme.lightTheme,               // <-- يستخدم الثيم
         routerConfig: appRouter,
         debugShowCheckedModeBanner: false,
       ),
