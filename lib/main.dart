@@ -4,7 +4,8 @@ import 'core/di/injection_container.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'features/settings/logic/settings_provider.dart';
-import 'features/scanner/logic/scanner_provider.dart';   // <-- أضف
+import 'features/scanner/logic/scanner_provider.dart';
+import 'features/editor/logic/editor_provider.dart';   // <-- أضف
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,8 +27,11 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<ScannerProvider>(
           create: (_) => sl<ScannerProvider>(),
         ),
+        ChangeNotifierProvider<EditorProvider>(    // <-- أضف
+          create: (_) => EditorProvider(),
+        ),
       ],
-      child: MaterialApp.router(               // تأكد من وجود .router هنا
+      child: MaterialApp.router(
         title: 'MN Doc',
         theme: AppTheme.lightTheme,
         routerConfig: appRouter,
