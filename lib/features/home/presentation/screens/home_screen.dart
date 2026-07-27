@@ -1,8 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../features/scanner/logic/scanner_provider.dart';
-import 'dart:io';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Wrap(
           children: [
             ListTile(
+              leading: const Icon(Icons.share),
+              title: const Text('مشاركة'),
+              onTap: () {
+                Navigator.pop(context);
+                _shareImage(provider.images[index].filePath);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.edit),
               title: const Text('إعادة تسمية'),
               onTap: () {
@@ -47,6 +56,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _shareImage(String filePath) {
+    if (File(filePath).existsSync()) {
+      Share.shareXFiles([XFile(filePath)], text: 'مستند من MN Doc');
+    }
   }
 
   void _showRenameDialog(

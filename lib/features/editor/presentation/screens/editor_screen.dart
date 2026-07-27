@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../logic/editor_provider.dart';
 import '../../../scanner/logic/scanner_provider.dart';
 import '../../../scanner/data/models/scanned_image.dart';
@@ -147,6 +148,18 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  Future<void> _shareDocument() async {
+    if (backgroundImagePath == null) return;
+    final editor = context.read<EditorProvider>();
+    // إذا كان هناك تعديلات محفوظة، شارك الصورة المدمجة
+    final mergedPath = await editor.saveMergedImage(backgroundImagePath!);
+    final fileToShare = mergedPath ?? backgroundImagePath!;
+    if (File(fileToShare).existsSync()) {
+      if (!mounted) return;
+      await Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final editor = context.watch<EditorProvider>();
@@ -154,6 +167,11 @@ class _EditorScreenState extends State<EditorScreen> {
       appBar: AppBar(
         title: const Text('محرر المستند'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: _shareDocument,
+            tooltip: 'مشاركة',
+          ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
             onPressed: _exportToPdf,
