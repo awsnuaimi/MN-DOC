@@ -56,13 +56,13 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.document_scanner,
                   size: 100,
                   color: Colors.white,
                 ),
                 const SizedBox(height: 20),
-                Text(
+                const Text(
                   'MN Doc',
                   style: TextStyle(
                     fontSize: 36,
