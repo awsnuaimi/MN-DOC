@@ -1,7 +1,8 @@
 import 'package:go_router/go_router.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
-import '../../features/scanner/presentation/screens/scanner_screen.dart';  // <-- أضف
+import '../../features/scanner/presentation/screens/scanner_screen.dart';
+import '../../features/editor/presentation/screens/editor_screen.dart';  // أضف
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -16,7 +17,15 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/scanner',
-      builder: (context, state) => const ScannerScreen(),     // <-- أضف
+      builder: (context, state) => const ScannerScreen(),
+    ),
+    GoRoute(
+      path: '/editor',
+      builder: (context, state) {
+        // نقرأ معرف الصورة من query parameters
+        final imageId = state.uri.queryParameters['id'];
+        return EditorScreen();
+      },
     ),
   ],
 );
