@@ -19,7 +19,28 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<ScannerProvider>().loadImages();
     });
   }
-
+  void _showDeleteDialog(BuildContext context, int index, ScannerProvider provider) {
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('حذف المستند'),
+      content: const Text('هل أنت متأكد من حذف هذا المستند؟'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('إلغاء'),
+        ),
+        TextButton(
+          onPressed: () {
+            provider.deleteImage(index);
+            Navigator.pop(context);
+          },
+          child: const Text('حذف', style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,11 +97,17 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final image = provider.images[index];
               return Card(
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () {
-                    context.go('/editor?id=${image.id}');
-                  },
+  clipBehavior: Clip.antiAlias,
+  child: InkWell(
+    onTap: () {
+      context.go('/editor?id=${image.id}');
+    },
+    onLongPress: () {
+      _showDeleteDialog(context, index, provider);
+    },
+    child: Stack( ... ),
+  ),
+)
                   child: Stack(
                     fit: StackFit.expand,
                     children: [

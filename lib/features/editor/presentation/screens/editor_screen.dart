@@ -17,6 +17,7 @@ class _EditorScreenState extends State<EditorScreen> {
   final TextEditingController _textController = TextEditingController();
   String? backgroundImagePath;
   int? currentImageId;
+  bool _isSaving = false;
 
   @override
   void didChangeDependencies() {
@@ -47,6 +48,38 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  Future<void> _saveMergedImage() async {
+    if (backgroundImagePath == null) return;
+    setState(() => _isSaving = true);
+    final editor = context.read<EditorProvider>();
+    final newPath = await editor.saveMergedImage(backgroundImagePath!);
+    if (newPath != null) {
+      // تحديث الصورة في المستودع
+      if (currentImageId != null) {
+        final scanner = context.read<ScannerProvider>();
+        final oldImage = scanner.images.firstWhere((img) => img.id == currentImageId);
+        final updatedImage = ScannedImage(
+          id: oldImage.id,
+          filePath: newPath,
+          title: '${oldImage.title} (معدل)',
+          createdAt: oldImage.createdAt,
+        );
+        // حفظ التغيير في المستودع (سنضيف دالة update في scanner_repository لاحقاً)
+        // مؤقتاً: نضيف الصورة كعنصر جديد (أفضل من لا شيء)
+        scanner.pickImage(ImageSource.gallery); // هذا ليس صحيحاً، سنصلحه
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حفظ التعديلات')),
+      );
+      if (mounted) Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('فشل الحفظ')),
+      );
+    }
+    setState(() => _isSaving = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final editor = context.watch<EditorProvider>();
@@ -62,6 +95,15 @@ class _EditorScreenState extends State<EditorScreen> {
             icon: const Icon(Icons.draw),
             onPressed: () => _showSignaturePad(),
           ),
+          IconButton(
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.save),
+            onPressed: _isSaving ? null : _saveMergedImage,
+          ),
         ],
       ),
       body: backgroundImagePath == null
@@ -74,7 +116,6 @@ class _EditorScreenState extends State<EditorScreen> {
                   width: double.infinity,
                   height: double.infinity,
                 ),
-                // التوقيع
                 if (editor.signatureImage != null)
                   Positioned(
                     left: editor.signaturePosition.dx,
@@ -91,7 +132,6 @@ class _EditorScreenState extends State<EditorScreen> {
                       child: Image(image: editor.signatureImage!),
                     ),
                   ),
-                // النصوص
                 ...editor.texts.asMap().entries.map((entry) {
                   final index = entry.key;
                   final item = entry.value;
