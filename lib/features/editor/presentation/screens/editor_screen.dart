@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../logic/editor_provider.dart';
 import '../../../scanner/logic/scanner_provider.dart';
 import '../../../scanner/data/models/scanned_image.dart';
@@ -53,23 +54,10 @@ class _EditorScreenState extends State<EditorScreen> {
     setState(() => _isSaving = true);
     final editor = context.read<EditorProvider>();
     final newPath = await editor.saveMergedImage(backgroundImagePath!);
+    if (!mounted) return;
     if (newPath != null) {
-      // تحديث الصورة في المستودع
-      if (currentImageId != null) {
-        final scanner = context.read<ScannerProvider>();
-        final oldImage = scanner.images.firstWhere((img) => img.id == currentImageId);
-        final updatedImage = ScannedImage(
-          id: oldImage.id,
-          filePath: newPath,
-          title: '${oldImage.title} (معدل)',
-          createdAt: oldImage.createdAt,
-        );
-        // حفظ التغيير في المستودع (سنضيف دالة update في scanner_repository لاحقاً)
-        // مؤقتاً: نضيف الصورة كعنصر جديد (أفضل من لا شيء)
-        scanner.pickImage(ImageSource.gallery); // هذا ليس صحيحاً، سنصلحه
-      }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حفظ التعديلات')),
+        const SnackBar(content: Text('تم حفظ التعديلات (التوقيع)')),
       );
       if (mounted) Navigator.pop(context);
     } else {
@@ -89,11 +77,11 @@ class _EditorScreenState extends State<EditorScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.text_fields),
-            onPressed: () => _showAddTextDialog(),
+            onPressed: _showAddTextDialog,
           ),
           IconButton(
             icon: const Icon(Icons.draw),
-            onPressed: () => _showSignaturePad(),
+            onPressed: _showSignaturePad,
           ),
           IconButton(
             icon: _isSaving
@@ -156,7 +144,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
     );

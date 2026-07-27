@@ -3,8 +3,7 @@ import 'package:signature/signature.dart';
 
 class SignaturePadWidget extends StatefulWidget {
   final Function(ImageProvider?) onSignatureSaved;
-  const SignaturePadWidget({Key? key, required this.onSignatureSaved})
-      : super(key: key);
+  const SignaturePadWidget({super.key, required this.onSignatureSaved});
 
   @override
   State<SignaturePadWidget> createState() => _SignaturePadWidgetState();

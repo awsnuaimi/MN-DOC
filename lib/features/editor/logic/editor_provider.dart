@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
@@ -42,37 +43,24 @@ class EditorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // دمج الصورة مع النصوص والتوقيع
+  // دمج التوقيع فقط مع الصورة (النصوص مؤقتاً لا تدمج)
   Future<String?> saveMergedImage(String backgroundPath) async {
     try {
-      // تحميل الصورة الخلفية
       final backgroundBytes = await File(backgroundPath).readAsBytes();
       final backgroundImage = img.decodeImage(backgroundBytes);
       if (backgroundImage == null) return null;
 
-      // رسم النصوص
-      for (final textItem in _texts) {
-        // نستخدم مكتبة image لرسم النص (بسيط)
-        img.drawString(
-          backgroundImage,
-          textItem.text,
-          x: textItem.position.dx.toInt(),
-          y: textItem.position.dy.toInt(),
-          color: img.ColorRgb8(0, 0, 0),
-        );
-      }
-
-      // رسم التوقيع (إذا وجد)
       if (_signatureImage != null) {
-        // تحويل ImageProvider إلى bytes
         final uiImage = await _imageProviderToUiImage(_signatureImage!);
-        final signatureBytes = await uiImage.toByteData(format: ui.ImageByteFormat.png);
+        final signatureBytes =
+            await uiImage.toByteData(format: ui.ImageByteFormat.png);
         if (signatureBytes != null) {
-          final signatureImage = img.decodeImage(signatureBytes.buffer.asUint8List());
-          if (signatureImage != null) {
+          final signatureImg =
+              img.decodeImage(signatureBytes.buffer.asUint8List());
+          if (signatureImg != null) {
             img.compositeImage(
               backgroundImage,
-              signatureImage,
+              signatureImg,
               dstX: _signaturePosition.dx.toInt(),
               dstY: _signaturePosition.dy.toInt(),
             );
@@ -80,7 +68,6 @@ class EditorProvider extends ChangeNotifier {
         }
       }
 
-      // حفظ الصورة النهائية
       final appDir = await getApplicationDocumentsDirectory();
       final fileName = 'edited_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final savedFile = File(p.join(appDir.path, fileName));
@@ -91,7 +78,6 @@ class EditorProvider extends ChangeNotifier {
     }
   }
 
-  // دالة مساعدة لتحويل ImageProvider إلى ui.Image
   Future<ui.Image> _imageProviderToUiImage(ImageProvider provider) async {
     final completer = Completer<ui.Image>();
     final stream = provider.resolve(ImageConfiguration.empty);
