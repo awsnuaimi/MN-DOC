@@ -49,16 +49,33 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Future<void> _saveMergedImage() async {
-    if (backgroundImagePath == null) return;
+    if (backgroundImagePath == null || currentImageId == null) return;
     setState(() => _isSaving = true);
     final editor = context.read<EditorProvider>();
     final newPath = await editor.saveMergedImage(backgroundImagePath!);
-    if (!mounted) return;               // <-- فحص mounted بعد الانتظار
+    if (!mounted) return;
+
     if (newPath != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حفظ التعديلات (التوقيع)')),
+      // الحصول على بيانات الصورة القديمة لتحديثها
+      final scanner = context.read<ScannerProvider>();
+      final oldImage = scanner.images.firstWhere(
+        (img) => img.id == currentImageId,
+        orElse: () => ScannedImage(filePath: '', title: ''),
       );
-      if (mounted) Navigator.pop(context);
+      if (oldImage.id != null) {
+        final updatedImage = ScannedImage(
+          id: oldImage.id,
+          filePath: newPath,
+          title: oldImage.title,
+          createdAt: oldImage.createdAt,
+        );
+        await scanner.updateImage(updatedImage);
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حفظ التعديلات بنجاح')),
+      );
+      Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('فشل الحفظ')),

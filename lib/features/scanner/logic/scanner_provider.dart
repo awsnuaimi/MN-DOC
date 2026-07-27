@@ -28,7 +28,6 @@ class ScannerProvider extends ChangeNotifier {
   Future<void> pickImage(ImageSource source) async {
     final XFile? picked = await _picker.pickImage(source: source);
     if (picked != null) {
-      // نسخ الصورة إلى مجلد التطبيق لضمان الوصول الدائم
       final appDir = await getApplicationDocumentsDirectory();
       final fileName = 'scan_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final savedImage = File('${appDir.path}/$fileName');
@@ -44,11 +43,19 @@ class ScannerProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateImage(ScannedImage updatedImage) async {
+    await repository.updateImage(updatedImage);
+    final index = _images.indexWhere((img) => img.id == updatedImage.id);
+    if (index != -1) {
+      _images[index] = updatedImage;
+      notifyListeners();
+    }
+  }
+
   Future<void> deleteImage(int index) async {
     final image = _images[index];
     if (image.id != null) {
       await repository.deleteImage(image.id!);
-      // حذف الملف الفعلي إن وجد
       final file = File(image.filePath);
       if (await file.exists()) {
         await file.delete();

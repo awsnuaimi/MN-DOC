@@ -19,6 +19,16 @@ class ScannerRepository {
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  Future<void> updateImage(ScannedImage image) async {
+    final db = await localDB.database;
+    await db.update(
+      'scanned_images',
+      image.toMap(),
+      where: 'id = ?',
+      whereArgs: [image.id],
+    );
+  }
+
   Future<void> deleteImage(int id) async {
     final db = await localDB.database;
     await db.delete('scanned_images', where: 'id = ?', whereArgs: [id]);
