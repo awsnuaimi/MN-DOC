@@ -1,3 +1,4 @@
+import 'package:sqflite/sqflite.dart';   // <-- أضف هذا السطر
 import '../../../../core/services/local_db.dart';
 import '../models/profile.dart';
 
