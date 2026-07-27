@@ -19,13 +19,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<SettingsProvider>(
-          create: (_) => sl<SettingsProvider>(),
-        ),
-      ],
-      child: MaterialApp.router(
-        title: 'MN Doc',
-        theme: AppTheme.lightTheme,               // <-- يستخدم الثيم
+  ChangeNotifierProvider<SettingsProvider>(
+    create: (_) => sl<SettingsProvider>(),
+  ),
+  ChangeNotifierProvider<ScannerProvider>(
+    create: (_) => sl<ScannerProvider>(),
+  ),
+],
         routerConfig: appRouter,
         debugShowCheckedModeBanner: false,
       ),

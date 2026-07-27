@@ -15,6 +15,7 @@ dependencies:
   sqflite: ^2.3.0          # قاعدة بيانات محلية
   path_provider: ^2.1.1    # مسارات التخزين
   # حزم أخرى سنضيفها لاحقاً: camera, pdf, signature...
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:
