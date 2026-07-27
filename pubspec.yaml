@@ -15,9 +15,10 @@ dependencies:
   sqflite: ^2.3.0
   path_provider: ^2.1.1
   image_picker: ^1.0.7
-  path: ^1.8.3                     # <-- أضف هذا
+  path: ^1.8.3
+  signature: ^5.4.0
+
 dev_dependencies:
-signature: ^5.4.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
