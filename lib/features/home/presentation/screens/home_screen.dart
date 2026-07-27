@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../../features/scanner/logic/scanner_provider.dart';
-import '../../../../features/scanner/data/models/scanned_image.dart';
 import 'dart:io';
 
 class HomeScreen extends StatefulWidget {
@@ -16,7 +15,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // تحميل الصور عند بدء الشاشة
     Future.microtask(() {
       context.read<ScannerProvider>().loadImages();
     });
@@ -81,7 +79,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () {
-                    // لاحقاً: انتقل إلى المحرر مع معرف الصورة
                     context.go('/editor?id=${image.id}');
                   },
                   child: Stack(
