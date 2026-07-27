@@ -20,7 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _showOptionsDialog(BuildContext context, int index, ScannerProvider provider) {
+  void _showOptionsDialog(
+      BuildContext context, int index, ScannerProvider provider) {
     showModalBottomSheet(
       context: context,
       builder: (_) => SafeArea(
@@ -48,8 +49,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showRenameDialog(BuildContext context, int index, ScannerProvider provider) {
-    final controller = TextEditingController(text: provider.images[index].title);
+  void _showRenameDialog(
+      BuildContext context, int index, ScannerProvider provider) {
+    final controller =
+        TextEditingController(text: provider.images[index].title);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -79,7 +82,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showDeleteDialog(BuildContext context, int index, ScannerProvider provider) {
+  void _showDeleteDialog(
+      BuildContext context, int index, ScannerProvider provider) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(

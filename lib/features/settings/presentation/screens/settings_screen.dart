@@ -62,7 +62,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
+                  decoration:
+                      const InputDecoration(labelText: 'البريد الإلكتروني'),
                 ),
                 const SizedBox(height: 12),
                 TextField(

@@ -27,12 +27,12 @@ class ScannedImage {
             : DateTime.now(),
       );
 
-  ScannedImage copyWith({int? id, String? filePath, String? title, DateTime? createdAt}) {
-    return ScannedImage(
-      id: id ?? this.id,
-      filePath: filePath ?? this.filePath,
-      title: title ?? this.title,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
+  ScannedImage copyWith(
+          {int? id, String? filePath, String? title, DateTime? createdAt}) =>
+      ScannedImage(
+        id: id ?? this.id,
+        filePath: filePath ?? this.filePath,
+        title: title ?? this.title,
+        createdAt: createdAt ?? this.createdAt,
+      );
 }

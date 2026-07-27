@@ -5,7 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'features/settings/logic/settings_provider.dart';
 import 'features/scanner/logic/scanner_provider.dart';
-import 'features/editor/logic/editor_provider.dart';   // <-- أضف
+import 'features/editor/logic/editor_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<ScannerProvider>(
           create: (_) => sl<ScannerProvider>(),
         ),
-        ChangeNotifierProvider<EditorProvider>(    // <-- أضف
+        ChangeNotifierProvider<EditorProvider>(
           create: (_) => EditorProvider(),
         ),
       ],

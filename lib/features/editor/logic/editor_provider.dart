@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
@@ -12,6 +13,9 @@ class EditorProvider extends ChangeNotifier {
 
   ImageProvider? _signatureImage;
   ImageProvider? get signatureImage => _signatureImage;
+
+  Uint8List? _signatureBytes;
+  Uint8List? get signatureBytes => _signatureBytes;
 
   Offset _signaturePosition = const Offset(50, 200);
   Offset get signaturePosition => _signaturePosition;
@@ -28,8 +32,9 @@ class EditorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setSignature(ImageProvider? image) {
+  void setSignature(ImageProvider? image, Uint8List? bytes) {
     _signatureImage = image;
+    _signatureBytes = bytes;
     notifyListeners();
   }
 
@@ -43,28 +48,22 @@ class EditorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // دمج التوقيع فقط مع الصورة (النصوص مؤقتاً لا تدمج)
+  // دمج التوقيع فقط مع الصورة
   Future<String?> saveMergedImage(String backgroundPath) async {
     try {
       final backgroundBytes = await File(backgroundPath).readAsBytes();
       final backgroundImage = img.decodeImage(backgroundBytes);
       if (backgroundImage == null) return null;
 
-      if (_signatureImage != null) {
-        final uiImage = await _imageProviderToUiImage(_signatureImage!);
-        final signatureBytes =
-            await uiImage.toByteData(format: ui.ImageByteFormat.png);
-        if (signatureBytes != null) {
-          final signatureImg =
-              img.decodeImage(signatureBytes.buffer.asUint8List());
-          if (signatureImg != null) {
-            img.compositeImage(
-              backgroundImage,
-              signatureImg,
-              dstX: _signaturePosition.dx.toInt(),
-              dstY: _signaturePosition.dy.toInt(),
-            );
-          }
+      if (_signatureBytes != null) {
+        final signatureImg = img.decodeImage(_signatureBytes!);
+        if (signatureImg != null) {
+          img.compositeImage(
+            backgroundImage,
+            signatureImg,
+            dstX: _signaturePosition.dx.toInt(),
+            dstY: _signaturePosition.dy.toInt(),
+          );
         }
       }
 
@@ -76,15 +75,6 @@ class EditorProvider extends ChangeNotifier {
     } catch (e) {
       return null;
     }
-  }
-
-  Future<ui.Image> _imageProviderToUiImage(ImageProvider provider) async {
-    final completer = Completer<ui.Image>();
-    final stream = provider.resolve(ImageConfiguration.empty);
-    stream.addListener(ImageStreamListener((info, _) {
-      completer.complete(info.image);
-    }));
-    return completer.future;
   }
 }
 

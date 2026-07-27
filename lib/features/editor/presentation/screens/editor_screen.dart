@@ -1,6 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../../logic/editor_provider.dart';
 import '../../../scanner/logic/scanner_provider.dart';
 import '../../../scanner/data/models/scanned_image.dart';
@@ -56,7 +60,6 @@ class _EditorScreenState extends State<EditorScreen> {
     if (!mounted) return;
 
     if (newPath != null) {
-      // الحصول على بيانات الصورة القديمة لتحديثها
       final scanner = context.read<ScannerProvider>();
       final oldImage = scanner.images.firstWhere(
         (img) => img.id == currentImageId,
@@ -84,6 +87,67 @@ class _EditorScreenState extends State<EditorScreen> {
     setState(() => _isSaving = false);
   }
 
+  Future<void> _exportToPdf() async {
+    if (backgroundImagePath == null) return;
+    final editor = context.read<EditorProvider>();
+
+    try {
+      final backgroundBytes = await File(backgroundImagePath!).readAsBytes();
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (context) {
+            return pw.Stack(
+              children: [
+                pw.Positioned(
+                  left: 0,
+                  top: 0,
+                  child: pw.Image(
+                    pw.MemoryImage(backgroundBytes),
+                    fit: pw.BoxFit.contain,
+                    width: PdfPageFormat.a4.width,
+                    height: PdfPageFormat.a4.height,
+                  ),
+                ),
+                ...editor.texts.map((item) {
+                  return pw.Positioned(
+                    left: item.position.dx,
+                    top: item.position.dy,
+                    child: pw.Text(
+                      item.text,
+                      style: pw.TextStyle(
+                          fontSize: 14, color: PdfColors.black),
+                    ),
+                  );
+                }),
+                if (editor.signatureBytes != null)
+                  pw.Positioned(
+                    left: editor.signaturePosition.dx,
+                    top: editor.signaturePosition.dy,
+                    child: pw.Image(
+                      pw.MemoryImage(editor.signatureBytes!),
+                      width: 150,
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      );
+
+      await Printing.layoutPdf(
+        onLayout: (format) async => pdf.save(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل التصدير: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final editor = context.watch<EditorProvider>();
@@ -91,6 +155,11 @@ class _EditorScreenState extends State<EditorScreen> {
       appBar: AppBar(
         title: const Text('محرر المستند'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            onPressed: _exportToPdf,
+            tooltip: 'تصدير إلى PDF',
+          ),
           IconButton(
             icon: const Icon(Icons.text_fields),
             onPressed: _showAddTextDialog,
@@ -200,8 +269,8 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (_) => AlertDialog(
         title: const Text('توقيعك'),
         content: SignaturePadWidget(
-          onSignatureSaved: (image) {
-            context.read<EditorProvider>().setSignature(image);
+          onSignatureSaved: (image, bytes) {
+            context.read<EditorProvider>().setSignature(image, bytes);
           },
         ),
       ),

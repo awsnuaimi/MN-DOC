@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';   // <-- أضف هذا الاستيراد
+import 'package:image_picker/image_picker.dart';
 import '../../logic/scanner_provider.dart';
 import 'dart:io';
 
@@ -25,7 +25,8 @@ class ScannerScreen extends StatelessWidget {
           ? const Center(child: CircularProgressIndicator())
           : provider.images.isEmpty
               ? const Center(
-                  child: Text('لا توجد صور ممسوحة. اضغط على أيقونة الكاميرا للبدء.'),
+                  child: Text(
+                      'لا توجد صور ممسوحة. اضغط على أيقونة الكاميرا للبدء.'),
                 )
               : GridView.builder(
                   padding: const EdgeInsets.all(8),
@@ -64,7 +65,8 @@ class ScannerScreen extends StatelessWidget {
                             top: 4,
                             right: 4,
                             child: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
+                              icon:
+                                  const Icon(Icons.delete, color: Colors.red),
                               onPressed: () => provider.deleteImage(index),
                             ),
                           ),

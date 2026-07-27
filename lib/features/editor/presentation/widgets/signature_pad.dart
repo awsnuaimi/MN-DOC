@@ -1,8 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:signature/signature.dart';
 
 class SignaturePadWidget extends StatefulWidget {
-  final Function(ImageProvider?) onSignatureSaved;
+  final Function(ImageProvider?, Uint8List?) onSignatureSaved;
   const SignaturePadWidget({super.key, required this.onSignatureSaved});
 
   @override
@@ -37,10 +38,10 @@ class _SignaturePadWidgetState extends State<SignaturePadWidget> {
               onPressed: () async {
                 if (_controller.isEmpty) return;
                 final imageBytes = await _controller.toPngBytes();
-                if (!mounted) return;   // <-- فحص mounted بعد الانتظار
+                if (!mounted) return;
                 if (imageBytes != null) {
                   final image = MemoryImage(imageBytes);
-                  widget.onSignatureSaved(image);
+                  widget.onSignatureSaved(image, imageBytes);
                   Navigator.pop(context);
                 }
               },
