@@ -52,6 +52,15 @@ class ScannerProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> renameImage(int index, String newTitle) async {
+    final image = _images[index];
+    if (image.id != null) {
+      await repository.renameImage(image.id!, newTitle);
+      _images[index] = image.copyWith(title: newTitle);
+      notifyListeners();
+    }
+  }
+
   Future<void> deleteImage(int index) async {
     final image = _images[index];
     if (image.id != null) {

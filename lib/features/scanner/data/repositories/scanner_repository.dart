@@ -29,6 +29,16 @@ class ScannerRepository {
     );
   }
 
+  Future<void> renameImage(int id, String newTitle) async {
+    final db = await localDB.database;
+    await db.update(
+      'scanned_images',
+      {'title': newTitle},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<void> deleteImage(int id) async {
     final db = await localDB.database;
     await db.delete('scanned_images', where: 'id = ?', whereArgs: [id]);

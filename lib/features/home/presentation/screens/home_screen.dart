@@ -20,8 +20,66 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _showDeleteDialog(
-      BuildContext context, int index, ScannerProvider provider) {
+  void _showOptionsDialog(BuildContext context, int index, ScannerProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('إعادة تسمية'),
+              onTap: () {
+                Navigator.pop(context);
+                _showRenameDialog(context, index, provider);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('حذف', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _showDeleteDialog(context, index, provider);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRenameDialog(BuildContext context, int index, ScannerProvider provider) {
+    final controller = TextEditingController(text: provider.images[index].title);
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('إعادة تسمية المستند'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: 'الاسم الجديد'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () {
+              final newTitle = controller.text.trim();
+              if (newTitle.isNotEmpty) {
+                provider.renameImage(index, newTitle);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('حفظ'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context, int index, ScannerProvider provider) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -100,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     context.go('/editor?id=${image.id}');
                   },
                   onLongPress: () {
-                    _showDeleteDialog(context, index, provider);
+                    _showOptionsDialog(context, index, provider);
                   },
                   child: Stack(
                     fit: StackFit.expand,
