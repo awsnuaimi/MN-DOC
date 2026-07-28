@@ -40,23 +40,30 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _loadImageByPath(String filePath) async {
-    final file = File(filePath);
-    if (await file.exists()) {
-      if (!mounted) return;
-      setState(() {
-        backgroundImagePath = filePath;
-        _loadingFailed = false;
-      });
-    } else {
-      if (!mounted) return;
-      setState(() {
-        _loadingFailed = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ملف الصورة غير موجود على الجهاز')),
-      );
-    }
+  // عرض المسار للتشخيص
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('محاولة فتح: $filePath'), duration: const Duration(seconds: 3)),
+    );
   }
+  
+  final file = File(filePath);
+  if (await file.exists()) {
+    if (!mounted) return;
+    setState(() {
+      backgroundImagePath = filePath;
+      _loadingFailed = false;
+    });
+  } else {
+    if (!mounted) return;
+    setState(() {
+      _loadingFailed = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('ملف الصورة غير موجود على الجهاز')),
+    );
+  }
+}
 
   Future<void> _saveMergedImage() async {
     if (backgroundImagePath == null) return;

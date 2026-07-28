@@ -39,7 +39,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       );
       return;
     }
-    context.go('/editor', extra: image.filePath);
+    // استخدم push بدلاً من go لضمان وصول extra
+    context.push('/editor', extra: image.filePath);
   }
 
   void _showOptionsDialog(BuildContext context, ScannedImage image, ScannerProvider provider) {
