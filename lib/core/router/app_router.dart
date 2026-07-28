@@ -46,7 +46,6 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/editor',
       builder: (context, state) {
-        // استخراج المعرف من extra
         final imageId = state.extra as String?;
         return EditorScreen(imageId: imageId);
       },

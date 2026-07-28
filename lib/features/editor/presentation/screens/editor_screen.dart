@@ -39,16 +39,30 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  void _loadImagePath(int id) {
+  void _loadImagePath(int id) async {
     final scannerProvider = context.read<ScannerProvider>();
+    
+    // إذا كانت القائمة فارغة، نحمّل الصور أولاً
+    if (scannerProvider.images.isEmpty) {
+      await scannerProvider.loadImages();
+    }
+    
+    // الآن نبحث عن الصورة
     final image = scannerProvider.images.firstWhere(
       (img) => img.id == id,
       orElse: () => ScannedImage(filePath: '', title: ''),
     );
-    if (image.filePath.isNotEmpty) {
+    
+    if (image.filePath.isNotEmpty && mounted) {
       setState(() {
         backgroundImagePath = image.filePath;
       });
+    } else if (mounted) {
+      // لم يتم العثور على الصورة
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('المستند غير موجود')),
+      );
+      Navigator.pop(context);
     }
   }
 
@@ -96,29 +110,6 @@ class _EditorScreenState extends State<EditorScreen> {
   bool _isImageFile(String path) {
     final extension = path.split('.').last.toLowerCase();
     return ['jpg', 'jpeg', 'png', 'bmp'].contains(extension);
-  }
-
-  Future<void> _cropImage() async {
-    if (backgroundImagePath == null) return;
-    final CroppedFile? croppedFile = await ImageCropper().cropImage(
-      sourcePath: backgroundImagePath!,
-      aspectRatioPresets: const [
-        CropAspectRatioPreset.ratio4x3,
-        CropAspectRatioPreset.ratio16x9,
-      ],
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'قص الصورة',
-          toolbarColor: Theme.of(context).primaryColor,
-        ),
-        IOSUiSettings(title: 'قص الصورة'),
-      ],
-    );
-    if (croppedFile != null && mounted) {
-      setState(() {
-        backgroundImagePath = croppedFile.path;
-      });
-    }
   }
 
   Future<void> _exportToPdf() async {
@@ -196,16 +187,38 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  Future<void> _shareDocument() async {
+  void _shareDocument() async {
     if (backgroundImagePath == null) return;
     if (_isImageFile(backgroundImagePath!)) {
       final editor = context.read<EditorProvider>();
       final mergedPath = await editor.saveMergedImage(backgroundImagePath!);
       final fileToShare = mergedPath ?? backgroundImagePath!;
-      await Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
+      Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
     } else {
-      await Share.shareXFiles([XFile(backgroundImagePath!)],
+      Share.shareXFiles([XFile(backgroundImagePath!)],
           text: 'مستند من MN Doc');
+    }
+  }
+
+  Future<void> _cropImage() async {
+    if (backgroundImagePath == null) return;
+    CroppedFile? croppedFile = await ImageCropper().cropImage(
+      sourcePath: backgroundImagePath!,
+      aspectRatioPresets: [
+        CropAspectRatioPreset.ratio4x3,
+        CropAspectRatioPreset.ratio16x9,
+      ],
+      uiSettings: [
+        AndroidUiSettings(
+            toolbarTitle: 'قص الصورة',
+            toolbarColor: Theme.of(context).primaryColor),
+        const IOSUiSettings(title: 'قص الصورة'),
+      ],
+    );
+    if (croppedFile != null && mounted) {
+      setState(() {
+        backgroundImagePath = croppedFile.path;
+      });
     }
   }
 
@@ -215,6 +228,11 @@ class _EditorScreenState extends State<EditorScreen> {
       appBar: AppBar(
         title: const Text('محرر المستند'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.crop),
+            onPressed: _cropImage,
+            tooltip: 'قص الصورة',
+          ),
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: _isSaving ? null : _saveMergedImage,
@@ -238,11 +256,6 @@ class _EditorScreenState extends State<EditorScreen> {
                     icon: const Icon(Icons.draw),
                     onPressed: _showSignaturePad,
                     tooltip: 'توقيع',
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.crop),
-                    onPressed: _cropImage,
-                    tooltip: 'قص الصورة',
                   ),
                   IconButton(
                     icon: const Icon(Icons.share),
@@ -333,7 +346,8 @@ class _EditorScreenState extends State<EditorScreen> {
                 padding: const EdgeInsets.all(4),
                 color: Colors.white70,
                 child: Text(item.text,
-                    style: TextStyle(fontSize: item.fontSize, color: item.color)),
+                    style: TextStyle(
+                        fontSize: item.fontSize, color: item.color)),
               ),
             ),
           );
@@ -355,7 +369,8 @@ class _EditorScreenState extends State<EditorScreen> {
               children: [
                 TextField(
                   controller: _textController,
-                  decoration: const InputDecoration(hintText: 'اكتب النص هنا'),
+                  decoration:
+                      const InputDecoration(hintText: 'اكتب النص هنا'),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -386,14 +401,16 @@ class _EditorScreenState extends State<EditorScreen> {
                             setStateDialog(() {});
                           },
                           child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            margin:
+                                const EdgeInsets.symmetric(horizontal: 4),
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
                               color: color,
                               shape: BoxShape.circle,
                               border: editor.textColor == color
-                                  ? Border.all(color: Colors.black, width: 2)
+                                  ? Border.all(
+                                      color: Colors.black, width: 2)
                                   : null,
                             ),
                           ),
