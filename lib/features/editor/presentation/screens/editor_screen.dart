@@ -207,9 +207,12 @@ class _EditorScreenState extends State<EditorScreen> {
       ],
       uiSettings: [
         AndroidUiSettings(
-            toolbarTitle: 'قص الصورة',
-            toolbarColor: Theme.of(context).primaryColor),
-        const IOSUiSettings(title: 'قص الصورة'), // السطر الذي تم تعديله (يحتوي const الآن)
+          toolbarTitle: 'قص الصورة',
+          toolbarColor: Theme.of(context).primaryColor,
+        ),
+        IOSUiSettings(
+          title: 'قص الصورة',
+        ),
       ],
     );
     if (croppedFile != null && mounted) {
