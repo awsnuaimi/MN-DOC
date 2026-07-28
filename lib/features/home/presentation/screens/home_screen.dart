@@ -21,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // تحميل الصور فوراً عند بدء الشاشة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ScannerProvider>().loadImages();
     });
@@ -34,15 +33,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _openDocument(ScannedImage image, ScannerProvider provider) {
-    // التأكد من أن الصورة موجودة
-    if (image.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('المستند غير موجود في قاعدة البيانات')),
-      );
-      return;
-    }
-
-    // التحقق من وجود الملف
+    // التأكد من وجود الملف
     if (!File(image.filePath).existsSync()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ملف المستند غير موجود')),
@@ -50,8 +41,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       return;
     }
 
-    // الانتقال إلى المحرر مع معرف الصورة
-    context.go('/editor', extra: image.id.toString());
+    String docId;
+    if (image.id != null) {
+      docId = image.id.toString();
+    } else {
+      // نبحث عن الصورة بالقائمة عشان نلاقي id الحقيقي
+      final realImage = provider.images.firstWhere(
+        (img) => img.filePath == image.filePath,
+        orElse: () => image,
+      );
+      if (realImage.id != null) {
+        docId = realImage.id.toString();
+      } else {
+        // لا يوجد id حقيقي — لا يمكن فتح المحرر بأمان
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تعذر تحديد هوية المستند')),
+        );
+        return;
+      }
+    }
+
+    // الانتقال إلى المحرر
+    context.go('/editor', extra: docId);
   }
 
   void _showOptionsDialog(BuildContext context, ScannedImage image, ScannerProvider provider) {

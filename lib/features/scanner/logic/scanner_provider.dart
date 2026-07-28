@@ -54,7 +54,10 @@ class ScannerProvider extends ChangeNotifier {
           title: 'مسح ${_images.length + 1}',
         );
         await repository.saveImage(newImage);
-        _images.insert(0, newImage);
+        
+        // إعادة تحميل القائمة للحصول على id الصحيح
+        await loadImages();
+        
         _errorMessage = null;
         notifyListeners();
       }
@@ -74,8 +77,7 @@ class ScannerProvider extends ChangeNotifier {
         final pickedFile = File(result.files.single.path!);
         final appDir = await getApplicationDocumentsDirectory();
         final extension = result.files.single.extension ?? 'jpg';
-        final fileName =
-            'file_${DateTime.now().millisecondsSinceEpoch}.$extension';
+        final fileName = 'file_${DateTime.now().millisecondsSinceEpoch}.$extension';
         final savedFile = File('${appDir.path}/$fileName');
         await pickedFile.copy(savedFile.path);
 
@@ -84,7 +86,10 @@ class ScannerProvider extends ChangeNotifier {
           title: result.files.single.name,
         );
         await repository.saveImage(newImage);
-        _images.insert(0, newImage);
+        
+        // إعادة تحميل القائمة للحصول على id الصحيح
+        await loadImages();
+        
         notifyListeners();
       }
     } catch (e) {
