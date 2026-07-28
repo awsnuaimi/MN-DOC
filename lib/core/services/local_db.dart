@@ -13,7 +13,7 @@ class LocalDB {
   Future<Database> _initDB() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'mn_doc.db');
-    return openDatabase(path, version: 1, onCreate: _onCreate);
+    return openDatabase(path, version: 2, onCreate: _onCreate, onUpgrade: _onUpgrade);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -25,14 +25,22 @@ class LocalDB {
         phone TEXT
       )
     ''');
-
     await db.execute('''
       CREATE TABLE scanned_images(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         filePath TEXT,
         title TEXT,
-        createdAt TEXT
+        createdAt TEXT,
+        isFavorite INTEGER DEFAULT 0,
+        isDeleted INTEGER DEFAULT 0
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE scanned_images ADD COLUMN isFavorite INTEGER DEFAULT 0');
+      await db.execute('ALTER TABLE scanned_images ADD COLUMN isDeleted INTEGER DEFAULT 0');
+    }
   }
 }

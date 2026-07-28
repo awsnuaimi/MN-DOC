@@ -5,6 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:image_cropper/image_cropper.dart';
 import '../../logic/editor_provider.dart';
 import '../../../scanner/logic/scanner_provider.dart';
 import '../../../scanner/data/models/scanned_image.dart';
@@ -97,6 +98,29 @@ class _EditorScreenState extends State<EditorScreen> {
     return ['jpg', 'jpeg', 'png', 'bmp'].contains(extension);
   }
 
+  Future<void> _cropImage() async {
+    if (backgroundImagePath == null) return;
+    final CroppedFile? croppedFile = await ImageCropper().cropImage(
+      sourcePath: backgroundImagePath!,
+      aspectRatioPresets: const [
+        CropAspectRatioPreset.ratio4x3,
+        CropAspectRatioPreset.ratio16x9,
+      ],
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'قص الصورة',
+          toolbarColor: Theme.of(context).primaryColor,
+        ),
+        IOSUiSettings(title: 'قص الصورة'),
+      ],
+    );
+    if (croppedFile != null && mounted) {
+      setState(() {
+        backgroundImagePath = croppedFile.path;
+      });
+    }
+  }
+
   Future<void> _exportToPdf() async {
     if (backgroundImagePath == null) return;
     if (!_isImageFile(backgroundImagePath!)) {
@@ -172,15 +196,15 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  void _shareDocument() async {
+  Future<void> _shareDocument() async {
     if (backgroundImagePath == null) return;
     if (_isImageFile(backgroundImagePath!)) {
       final editor = context.read<EditorProvider>();
       final mergedPath = await editor.saveMergedImage(backgroundImagePath!);
       final fileToShare = mergedPath ?? backgroundImagePath!;
-      Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
+      await Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
     } else {
-      Share.shareXFiles([XFile(backgroundImagePath!)],
+      await Share.shareXFiles([XFile(backgroundImagePath!)],
           text: 'مستند من MN Doc');
     }
   }
@@ -214,6 +238,11 @@ class _EditorScreenState extends State<EditorScreen> {
                     icon: const Icon(Icons.draw),
                     onPressed: _showSignaturePad,
                     tooltip: 'توقيع',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.crop),
+                    onPressed: _cropImage,
+                    tooltip: 'قص الصورة',
                   ),
                   IconButton(
                     icon: const Icon(Icons.share),

@@ -13,7 +13,13 @@ class ScannerProvider extends ChangeNotifier {
   ScannerProvider({required this.repository});
 
   List<ScannedImage> _images = [];
-  List<ScannedImage> get images => _images;
+  List<ScannedImage> get images => _images.where((img) => !img.isDeleted).toList();
+
+  List<ScannedImage> get favoriteImages =>
+      _images.where((img) => img.isFavorite && !img.isDeleted).toList();
+
+  List<ScannedImage> get deletedImages =>
+      _images.where((img) => img.isDeleted).toList();
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -51,12 +57,9 @@ class ScannerProvider extends ChangeNotifier {
         _images.insert(0, newImage);
         _errorMessage = null;
         notifyListeners();
-      } else {
-        _errorMessage = 'لم يتم اختيار صورة';
-        notifyListeners();
       }
     } catch (e) {
-      _errorMessage = 'تعذر التقاط الصورة. تأكد من منح صلاحية الكاميرا/المعرض.';
+      _errorMessage = 'تعذر التقاط الصورة. تأكد من صلاحية الكاميرا.';
       notifyListeners();
     }
   }
@@ -71,7 +74,8 @@ class ScannerProvider extends ChangeNotifier {
         final pickedFile = File(result.files.single.path!);
         final appDir = await getApplicationDocumentsDirectory();
         final extension = result.files.single.extension ?? 'jpg';
-        final fileName = 'file_${DateTime.now().millisecondsSinceEpoch}.$extension';
+        final fileName =
+            'file_${DateTime.now().millisecondsSinceEpoch}.$extension';
         final savedFile = File('${appDir.path}/$fileName');
         await pickedFile.copy(savedFile.path);
 
@@ -81,10 +85,6 @@ class ScannerProvider extends ChangeNotifier {
         );
         await repository.saveImage(newImage);
         _images.insert(0, newImage);
-        _errorMessage = null;
-        notifyListeners();
-      } else {
-        _errorMessage = 'لم يتم اختيار ملف';
         notifyListeners();
       }
     } catch (e) {
@@ -108,19 +108,50 @@ class ScannerProvider extends ChangeNotifier {
   }
 
   Future<void> renameImage(int index, String newTitle) async {
-    final image = _images[index];
+    final image = images[index];
     if (image.id != null) {
       await repository.renameImage(image.id!, newTitle);
-      _images[index] = image.copyWith(title: newTitle);
+      final realIndex = _images.indexWhere((img) => img.id == image.id);
+      if (realIndex != -1) {
+        _images[realIndex] = image.copyWith(title: newTitle);
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> toggleFavorite(int id) async {
+    final index = _images.indexWhere((img) => img.id == id);
+    if (index != -1) {
+      final newState = !_images[index].isFavorite;
+      await repository.toggleFavorite(id, newState);
+      _images[index] = _images[index].copyWith(isFavorite: newState);
       notifyListeners();
     }
   }
 
-  Future<void> deleteImage(int index) async {
-    final image = _images[index];
-    if (image.id != null) {
-      await repository.deleteImage(image.id!);
-      final file = File(image.filePath);
+  Future<void> softDeleteImage(int id) async {
+    final index = _images.indexWhere((img) => img.id == id);
+    if (index != -1) {
+      await repository.softDeleteImage(id);
+      _images[index] = _images[index].copyWith(isDeleted: true);
+      notifyListeners();
+    }
+  }
+
+  Future<void> restoreImage(int id) async {
+    final index = _images.indexWhere((img) => img.id == id);
+    if (index != -1) {
+      await repository.restoreImage(id);
+      _images[index] = _images[index].copyWith(isDeleted: false);
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteImagePermanently(int id) async {
+    final index = _images.indexWhere((img) => img.id == id);
+    if (index != -1) {
+      await repository.deleteImagePermanently(id);
+      final file = File(_images[index].filePath);
       if (await file.exists()) {
         await file.delete();
       }
