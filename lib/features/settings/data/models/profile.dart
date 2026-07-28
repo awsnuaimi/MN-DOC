@@ -25,8 +25,8 @@ class Profile {
         phone: map['phone'] ?? '',
       );
 
-  Profile copyWith({String? name, String? email, String? phone}) => Profile(
-        id: id,
+  Profile copyWith({int? id, String? name, String? email, String? phone}) => Profile(
+        id: id ?? this.id,
         name: name ?? this.name,
         email: email ?? this.email,
         phone: phone ?? this.phone,

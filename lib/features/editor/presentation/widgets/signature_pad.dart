@@ -26,35 +26,22 @@ class _SignaturePadWidgetState extends State<SignaturePadWidget> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Signature(
-          controller: _controller,
-          height: 200,
-          width: double.infinity,
-          backgroundColor: Colors.white,
-        ),
+        Signature(controller: _controller, height: 200, width: double.infinity, backgroundColor: Colors.white),
         const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton(
-              onPressed: () => _controller.clear(),
-              child: const Text('مسح'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (_controller.isEmpty) return;
-                final imageBytes = await _controller.toPngBytes();
-                if (!mounted) return;
-                if (imageBytes != null) {
-                  final image = MemoryImage(imageBytes);
-                  widget.onSignatureSaved(image, imageBytes);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('حفظ التوقيع'),
-            ),
-          ],
-        ),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          ElevatedButton(onPressed: () => _controller.clear(), child: const Text('مسح')),
+          ElevatedButton(onPressed: () async {
+            if (_controller.isEmpty) return;
+            final navigator = Navigator.of(context);
+            final imageBytes = await _controller.toPngBytes();
+            if (!mounted) return;
+            if (imageBytes != null) {
+              final image = MemoryImage(imageBytes);
+              widget.onSignatureSaved(image, imageBytes);
+              navigator.pop();
+            }
+          }, child: const Text('حفظ التوقيع')),
+        ]),
       ],
     );
   }

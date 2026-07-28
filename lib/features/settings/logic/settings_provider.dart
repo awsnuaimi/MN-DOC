@@ -21,12 +21,10 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> saveProfile(Profile profile) async {
-    // إذا كان هناك id سابقاً نحتفظ به
     if (_profile?.id != null) {
       profile = profile.copyWith(id: _profile!.id);
     }
     await profileRepository.saveProfile(profile);
-    // إعادة تحميل البروفايل للحصول على id الصحيح وأحدث البيانات
     await loadProfile();
   }
 }

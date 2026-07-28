@@ -1,4 +1,3 @@
-import 'package:sqflite/sqflite.dart';
 import '../../../../core/services/local_db.dart';
 import '../models/profile.dart';
 
@@ -9,7 +8,6 @@ class ProfileRepository {
 
   Future<Profile?> getProfile() async {
     final db = await localDB.database;
-    // نضمن الحصول على أحدث صف دائماً
     final results = await db.query('profile', orderBy: 'id DESC', limit: 1);
     if (results.isNotEmpty) {
       return Profile.fromMap(results.first);
@@ -20,18 +18,15 @@ class ProfileRepository {
   Future<void> saveProfile(Profile profile) async {
     final db = await localDB.database;
     if (profile.id != null) {
-      // تحديث الصف الموجود
       await db.update('profile', profile.toMap(),
           where: 'id = ?', whereArgs: [profile.id]);
     } else {
-      // البحث عن أول صف موجود لتحديثه، وإلا إدراج جديد
       final existing = await db.query('profile', limit: 1);
       if (existing.isNotEmpty) {
         final existingId = existing.first['id'] as int;
         final map = profile.toMap();
         map['id'] = existingId;
-        await db.update('profile', map,
-            where: 'id = ?', whereArgs: [existingId]);
+        await db.update('profile', map, where: 'id = ?', whereArgs: [existingId]);
       } else {
         await db.insert('profile', profile.toMap());
       }

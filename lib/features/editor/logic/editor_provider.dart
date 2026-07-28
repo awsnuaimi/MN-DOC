@@ -25,7 +25,6 @@ class EditorProvider extends ChangeNotifier {
   Color _textColor = Colors.black;
   Color get textColor => _textColor;
 
-  // أبعاد العرض الحالية (تُحدد من editor_screen)
   double _displayWidth = 0;
   double _displayHeight = 0;
 
@@ -84,7 +83,6 @@ class EditorProvider extends ChangeNotifier {
       final imgWidth = backgroundImage.width.toDouble();
       final imgHeight = backgroundImage.height.toDouble();
 
-      // حساب مقياس التحويل إذا توفرت أبعاد العرض
       double scaleX = 1.0;
       double scaleY = 1.0;
       if (_displayWidth > 0 && _displayHeight > 0) {
@@ -92,12 +90,11 @@ class EditorProvider extends ChangeNotifier {
         scaleY = imgHeight / _displayHeight;
       }
 
-      // رسم النصوص (سيظل خط لاتيني للمرحلة الانتقالية، وسنحسّنه لاحقاً)
       for (final textItem in _texts) {
         final colorInt = img.ColorRgb8(
-          textItem.color.r.toInt(),
-          textItem.color.g.toInt(),
-          textItem.color.b.toInt(),
+          textItem.color.red,
+          textItem.color.green,
+          textItem.color.blue,
         );
         final adjustedX = (textItem.position.dx * scaleX).toInt();
         final adjustedY = (textItem.position.dy * scaleY).toInt();
@@ -111,7 +108,6 @@ class EditorProvider extends ChangeNotifier {
         );
       }
 
-      // رسم التوقيع مع التحجيم
       if (_signatureBytes != null) {
         var signatureImg = img.decodeImage(_signatureBytes!);
         if (signatureImg != null) {
