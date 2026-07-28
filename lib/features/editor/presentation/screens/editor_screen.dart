@@ -11,7 +11,8 @@ import '../../../scanner/data/models/scanned_image.dart';
 import '../widgets/signature_pad.dart';
 
 class EditorScreen extends StatefulWidget {
-  const EditorScreen({super.key});
+  final String? imageId;
+  const EditorScreen({super.key, this.imageId});
 
   @override
   State<EditorScreen> createState() => _EditorScreenState();
@@ -24,17 +25,16 @@ class _EditorScreenState extends State<EditorScreen> {
   bool _isSaving = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final route = ModalRoute.of(context);
-    if (route != null) {
-      final idString = route.settings.arguments as String?;
-      if (idString != null) {
-        final id = int.tryParse(idString);
-        if (id != null && id != currentImageId) {
-          currentImageId = id;
+  void initState() {
+    super.initState();
+    if (widget.imageId != null) {
+      final id = int.tryParse(widget.imageId!);
+      if (id != null) {
+        currentImageId = id;
+        // نحمّل المسار بعد بناء الواجهة
+        WidgetsBinding.instance.addPostFrameCallback((_) {
           _loadImagePath(id);
-        }
+        });
       }
     }
   }
@@ -54,6 +54,13 @@ class _EditorScreenState extends State<EditorScreen> {
 
   Future<void> _saveMergedImage() async {
     if (backgroundImagePath == null || currentImageId == null) return;
+    // إذا كان الملف ليس صورة، لا يمكن حفظ التعديلات عليه
+    if (!_isImageFile(backgroundImagePath!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('التعديل متاح للصور فقط')),
+      );
+      return;
+    }
     setState(() => _isSaving = true);
     final editor = context.read<EditorProvider>();
     final newPath = await editor.saveMergedImage(backgroundImagePath!);
@@ -87,8 +94,21 @@ class _EditorScreenState extends State<EditorScreen> {
     setState(() => _isSaving = false);
   }
 
+  bool _isImageFile(String path) {
+    final extension = path.split('.').last.toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'bmp'].contains(extension);
+  }
+
   Future<void> _exportToPdf() async {
     if (backgroundImagePath == null) return;
+    if (!_isImageFile(backgroundImagePath!)) {
+      // إذا كان PDF أو غيره، نشاركه مباشرة بدلاً من تصديره
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('هذا الملف لا يمكن تحريره كصورة، جار مشاركته مباشرة')),
+      );
+      Share.shareXFiles([XFile(backgroundImagePath!)]);
+      return;
+    }
     final editor = context.read<EditorProvider>();
 
     try {
@@ -156,11 +176,13 @@ class _EditorScreenState extends State<EditorScreen> {
 
   void _shareDocument() async {
     if (backgroundImagePath == null) return;
-    final editor = context.read<EditorProvider>();
-    final mergedPath = await editor.saveMergedImage(backgroundImagePath!);
-    final fileToShare = mergedPath ?? backgroundImagePath!;
-    if (File(fileToShare).existsSync()) {
+    if (_isImageFile(backgroundImagePath!)) {
+      final editor = context.read<EditorProvider>();
+      final mergedPath = await editor.saveMergedImage(backgroundImagePath!);
+      final fileToShare = mergedPath ?? backgroundImagePath!;
       Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
+    } else {
+      Share.shareXFiles([XFile(backgroundImagePath!)], text: 'مستند من MN Doc');
     }
   }
 
@@ -181,83 +203,109 @@ class _EditorScreenState extends State<EditorScreen> {
             onPressed: _exportToPdf,
             tooltip: 'تصدير إلى PDF',
           ),
-          IconButton(
-            icon: const Icon(Icons.text_fields),
-            onPressed: _showAddTextDialog,
-          ),
-          IconButton(
-            icon: const Icon(Icons.draw),
-            onPressed: _showSignaturePad,
-          ),
-          IconButton(
-            icon: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.save),
-            onPressed: _isSaving ? null : _saveMergedImage,
-          ),
+          if (_isImageFile(backgroundImagePath ?? '')) ...[
+            IconButton(
+              icon: const Icon(Icons.text_fields),
+              onPressed: _showAddTextDialog,
+            ),
+            IconButton(
+              icon: const Icon(Icons.draw),
+              onPressed: _showSignaturePad,
+            ),
+            IconButton(
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.save),
+              onPressed: _isSaving ? null : _saveMergedImage,
+            ),
+          ],
         ],
       ),
-      body: backgroundImagePath == null
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                Image.file(
-                  File(backgroundImagePath!),
-                  fit: BoxFit.contain,
-                  width: double.infinity,
-                  height: double.infinity,
-                ),
-                if (editor.signatureImage != null)
-                  Positioned(
-                    left: editor.signaturePosition.dx,
-                    top: editor.signaturePosition.dy,
-                    child: GestureDetector(
-                      onPanUpdate: (details) {
-                        editor.updateSignaturePosition(
-                          Offset(
-                            editor.signaturePosition.dx + details.delta.dx,
-                            editor.signaturePosition.dy + details.delta.dy,
-                          ),
-                        );
-                      },
-                      child: Image(image: editor.signatureImage!),
-                    ),
-                  ),
-                ...editor.texts.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  return Positioned(
-                    left: item.position.dx,
-                    top: item.position.dy,
-                    child: GestureDetector(
-                      onPanUpdate: (details) {
-                        editor.updateTextPosition(
-                          index,
-                          Offset(
-                            item.position.dx + details.delta.dx,
-                            item.position.dy + details.delta.dy,
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        color: Colors.white70,
-                        child: Text(
-                          item.text,
-                          style: TextStyle(
-                            fontSize: item.fontSize,
-                            color: item.color,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (backgroundImagePath == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (!_isImageFile(backgroundImagePath!)) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.insert_drive_file, size: 80, color: Colors.grey[400]),
+            const SizedBox(height: 20),
+            Text(
+              'هذا النوع من الملفات لا يمكن تحريره حالياً',
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
             ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _shareDocument,
+              icon: const Icon(Icons.share),
+              label: const Text('مشاركة الملف'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final editor = context.watch<EditorProvider>();
+    return Stack(
+      children: [
+        Image.file(
+          File(backgroundImagePath!),
+          fit: BoxFit.contain,
+          width: double.infinity,
+          height: double.infinity,
+        ),
+        if (editor.signatureImage != null)
+          Positioned(
+            left: editor.signaturePosition.dx,
+            top: editor.signaturePosition.dy,
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                editor.updateSignaturePosition(
+                  Offset(
+                    editor.signaturePosition.dx + details.delta.dx,
+                    editor.signaturePosition.dy + details.delta.dy,
+                  ),
+                );
+              },
+              child: Image(image: editor.signatureImage!),
+            ),
+          ),
+        ...editor.texts.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          return Positioned(
+            left: item.position.dx,
+            top: item.position.dy,
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                editor.updateTextPosition(
+                  index,
+                  Offset(
+                    item.position.dx + details.delta.dx,
+                    item.position.dy + details.delta.dy,
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                color: Colors.white70,
+                child: Text(item.text,
+                    style: TextStyle(fontSize: item.fontSize, color: item.color)),
+              ),
+            ),
+          );
+        }),
+      ],
     );
   }
 

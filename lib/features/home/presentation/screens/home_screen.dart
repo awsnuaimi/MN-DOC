@@ -174,7 +174,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () {
-                    context.go('/editor?id=${image.id}');
+                    // استخدم extra لتمرير معرف الصورة
+                    context.go('/editor', extra: image.id.toString());
                   },
                   onLongPress: () {
                     _showOptionsDialog(context, index, provider);
