@@ -14,7 +14,7 @@ class AppShell extends StatelessWidget {
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: AppColors.gradientBottomBar,
           ),
           borderRadius: BorderRadius.circular(30),

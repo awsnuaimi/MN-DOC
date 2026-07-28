@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../logic/scanner_provider.dart';
+import '../../data/models/scanned_image.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class ScannerScreen extends StatelessWidget {
@@ -14,11 +15,10 @@ class ScannerScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          // شريط علوي مخصص
           Container(
             padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: AppColors.gradientPrimary),
+              gradient: const LinearGradient(colors: AppColors.gradientPrimary),
               borderRadius: const BorderRadius.vertical(
                 bottom: Radius.circular(30),
               ),
@@ -60,8 +60,8 @@ class ScannerScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             const Text(
                               'لا توجد صور ممسوحة',
-                              style: TextStyle(
-                                  fontSize: 18, color: Colors.grey),
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.grey),
                             ),
                           ],
                         ),
@@ -86,8 +86,7 @@ class ScannerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageCard(
-      ScannedImage image, ScannerProvider provider) {
+  Widget _buildImageCard(ScannedImage image, ScannerProvider provider) {
     return GestureDetector(
       onTap: () {
         // يمكن فتح المحرر مباشرة
