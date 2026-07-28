@@ -73,18 +73,17 @@ class EditorProvider extends ChangeNotifier {
       final backgroundImage = img.decodeImage(backgroundBytes);
       if (backgroundImage == null) return null;
 
-      // رسم النصوص باستخدام الخط الافتراضي (يدعم اللاتينية)
+      // رسم النصوص باستخدام خط افتراضي (يدعم اللاتينية فقط)
       for (final textItem in _texts) {
         final colorInt = img.ColorRgb8(
           textItem.color.red,
           textItem.color.green,
           textItem.color.blue,
         );
-        // img.drawString يتوقع (Image, String, font, x, y, color)
         img.drawString(
           backgroundImage,
           textItem.text,
-          font: img.arial24, // خط افتراضي لاتيني (لا يدعم العربية حاليًا)
+          font: img.arial24,
           x: textItem.position.dx.toInt(),
           y: textItem.position.dy.toInt(),
           color: colorInt,
