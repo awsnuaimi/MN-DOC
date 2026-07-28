@@ -53,16 +53,16 @@ class _SplashScreenState extends State<SplashScreen>
         child: Center(
           child: FadeTransition(
             opacity: _fadeAnimation,
-            child: Column(
+            child: const Column( // <-- أضفنا const هنا
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.document_scanner,
                   size: 100,
                   color: Colors.white,
                 ),
-                const SizedBox(height: 20),
-                const Text(
+                SizedBox(height: 20),
+                Text(
                   'MN Doc',
                   style: TextStyle(
                     fontSize: 36,
@@ -71,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen>
                     letterSpacing: 2,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   'امسح، حرر، ووقع مستنداتك',
                   style: TextStyle(

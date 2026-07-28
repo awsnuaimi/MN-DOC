@@ -31,7 +31,6 @@ class _EditorScreenState extends State<EditorScreen> {
       final id = int.tryParse(widget.imageId!);
       if (id != null) {
         currentImageId = id;
-        // نحمّل المسار بعد بناء الواجهة
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _loadImagePath(id);
         });
@@ -54,7 +53,6 @@ class _EditorScreenState extends State<EditorScreen> {
 
   Future<void> _saveMergedImage() async {
     if (backgroundImagePath == null || currentImageId == null) return;
-    // إذا كان الملف ليس صورة، لا يمكن حفظ التعديلات عليه
     if (!_isImageFile(backgroundImagePath!)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('التعديل متاح للصور فقط')),
@@ -102,9 +100,9 @@ class _EditorScreenState extends State<EditorScreen> {
   Future<void> _exportToPdf() async {
     if (backgroundImagePath == null) return;
     if (!_isImageFile(backgroundImagePath!)) {
-      // إذا كان PDF أو غيره، نشاركه مباشرة بدلاً من تصديره
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('هذا الملف لا يمكن تحريره كصورة، جار مشاركته مباشرة')),
+        const SnackBar(
+            content: Text('هذا الملف لا يمكن تحريره كصورة، جار مشاركته مباشرة')),
       );
       Share.shareXFiles([XFile(backgroundImagePath!)]);
       return;
@@ -182,13 +180,14 @@ class _EditorScreenState extends State<EditorScreen> {
       final fileToShare = mergedPath ?? backgroundImagePath!;
       Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
     } else {
-      Share.shareXFiles([XFile(backgroundImagePath!)], text: 'مستند من MN Doc');
+      Share.shareXFiles([XFile(backgroundImagePath!)],
+          text: 'مستند من MN Doc');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final editor = context.watch<EditorProvider>();
+    // لا نستخدم editor هنا، بل نستخدم context.read أو context.watch عند الحاجة
     return Scaffold(
       appBar: AppBar(
         title: const Text('محرر المستند'),
@@ -255,6 +254,7 @@ class _EditorScreenState extends State<EditorScreen> {
       );
     }
 
+    // هنا نستخدم editor فعلاً، لذلك نستدعيه
     final editor = context.watch<EditorProvider>();
     return Stack(
       children: [
@@ -300,7 +300,8 @@ class _EditorScreenState extends State<EditorScreen> {
                 padding: const EdgeInsets.all(4),
                 color: Colors.white70,
                 child: Text(item.text,
-                    style: TextStyle(fontSize: item.fontSize, color: item.color)),
+                    style:
+                        TextStyle(fontSize: item.fontSize, color: item.color)),
               ),
             ),
           );
@@ -322,7 +323,8 @@ class _EditorScreenState extends State<EditorScreen> {
               children: [
                 TextField(
                   controller: _textController,
-                  decoration: const InputDecoration(hintText: 'اكتب النص هنا'),
+                  decoration:
+                      const InputDecoration(hintText: 'اكتب النص هنا'),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -353,14 +355,16 @@ class _EditorScreenState extends State<EditorScreen> {
                             setStateDialog(() {});
                           },
                           child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            margin:
+                                const EdgeInsets.symmetric(horizontal: 4),
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
                               color: color,
                               shape: BoxShape.circle,
                               border: editor.textColor == color
-                                  ? Border.all(color: Colors.black, width: 2)
+                                  ? Border.all(
+                                      color: Colors.black, width: 2)
                                   : null,
                             ),
                           ),
