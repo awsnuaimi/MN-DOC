@@ -9,11 +9,22 @@ class ScannerRepository {
 
   Future<List<ScannedImage>> getAllImages({bool includeDeleted = false}) async {
     final db = await localDB.database;
-    String where = includeDeleted ? '' : 'WHERE isDeleted = 0';
-    final results = await db.query('scanned_images', where: where, orderBy: 'createdAt DESC');
+    final String? where;
+    if (!includeDeleted) {
+      where = 'isDeleted = 0';
+    } else {
+      where = null; // تحميل الكل
+    }
+    final results = await db.query(
+      'scanned_images',
+      where: where,
+      orderBy: 'createdAt DESC',
+    );
     return results.map((map) => ScannedImage.fromMap(map)).toList();
   }
 
+  // ... باقي الدوال (saveImage, updateImage, renameImage, toggleFavorite, softDeleteImage, restoreImage, deleteImagePermanently) كما هي بدون تغيير
+  // تأكد من وجودها كاملة من الإصدار السابق
   Future<List<ScannedImage>> getFavoriteImages() async {
     final db = await localDB.database;
     final results = await db.query('scanned_images',

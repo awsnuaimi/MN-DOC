@@ -39,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       );
       return;
     }
-    // استخدم push بدلاً من go لضمان وصول extra
     context.push('/editor', extra: image.filePath);
   }
 
@@ -227,12 +226,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ? const Center(
                             child: Icon(Icons.picture_as_pdf, size: 60, color: Colors.red),
                           )
-                        : Hero(
-                            tag: 'image_${image.id}',
-                            child: Image.file(
-                              File(image.filePath),
-                              fit: BoxFit.cover,
-                            ),
+                        : Image.file( // Hero محذوف لتجنب مشكلة التاغ المكرر
+                            File(image.filePath),
+                            fit: BoxFit.cover,
                           ),
                     if (image.isFavorite)
                       const Positioned(

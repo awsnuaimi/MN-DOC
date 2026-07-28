@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'core/di/injection_container.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
-import 'core/providers/theme_provider.dart';
 import 'features/settings/logic/settings_provider.dart';
 import 'features/scanner/logic/scanner_provider.dart';
 import 'features/editor/logic/editor_provider.dart';
@@ -29,23 +28,16 @@ class MyApp extends StatelessWidget {
           create: (_) => sl<ScannerProvider>(),
         ),
         ChangeNotifierProvider<EditorProvider>(
-          create: (_) => EditorProvider(),
-        ),
-        ChangeNotifierProvider<ThemeProvider>(
-          create: (_) => ThemeProvider(),
+          create: (_) => sl<EditorProvider>(), // من GetIt
         ),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp.router(
-            title: 'MN Doc',
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            themeMode: themeProvider.themeMode,
-            routerConfig: appRouter,
-            debugShowCheckedModeBanner: false,
-          );
-        },
+      child: MaterialApp.router(
+        title: 'MN Doc',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        routerConfig: appRouter,
+        debugShowCheckedModeBanner: false,
       ),
     );
   }

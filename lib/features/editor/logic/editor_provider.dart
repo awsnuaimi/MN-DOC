@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -25,6 +24,15 @@ class EditorProvider extends ChangeNotifier {
   double get textSize => _textSize;
   Color _textColor = Colors.black;
   Color get textColor => _textColor;
+
+  // أبعاد العرض الحالية (تُحدد من editor_screen)
+  double _displayWidth = 0;
+  double _displayHeight = 0;
+
+  void setDisplaySize(double width, double height) {
+    _displayWidth = width;
+    _displayHeight = height;
+  }
 
   void addText(String text, Offset position) {
     _texts.add(TextItem(
@@ -73,32 +81,52 @@ class EditorProvider extends ChangeNotifier {
       final backgroundImage = img.decodeImage(backgroundBytes);
       if (backgroundImage == null) return null;
 
-      // رسم النصوص باستخدام خط افتراضي (يدعم اللاتينية فقط)
+      final imgWidth = backgroundImage.width.toDouble();
+      final imgHeight = backgroundImage.height.toDouble();
+
+      // حساب مقياس التحويل إذا توفرت أبعاد العرض
+      double scaleX = 1.0;
+      double scaleY = 1.0;
+      if (_displayWidth > 0 && _displayHeight > 0) {
+        scaleX = imgWidth / _displayWidth;
+        scaleY = imgHeight / _displayHeight;
+      }
+
+      // رسم النصوص (سيظل خط لاتيني للمرحلة الانتقالية، وسنحسّنه لاحقاً)
       for (final textItem in _texts) {
         final colorInt = img.ColorRgb8(
-          textItem.color.red,
-          textItem.color.green,
-          textItem.color.blue,
+          textItem.color.r.toInt(),
+          textItem.color.g.toInt(),
+          textItem.color.b.toInt(),
         );
+        final adjustedX = (textItem.position.dx * scaleX).toInt();
+        final adjustedY = (textItem.position.dy * scaleY).toInt();
         img.drawString(
           backgroundImage,
           textItem.text,
           font: img.arial24,
-          x: textItem.position.dx.toInt(),
-          y: textItem.position.dy.toInt(),
+          x: adjustedX,
+          y: adjustedY,
           color: colorInt,
         );
       }
 
-      // رسم التوقيع
+      // رسم التوقيع مع التحجيم
       if (_signatureBytes != null) {
-        final signatureImg = img.decodeImage(_signatureBytes!);
+        var signatureImg = img.decodeImage(_signatureBytes!);
         if (signatureImg != null) {
+          if (_signatureScale != 1.0) {
+            final newW = (signatureImg.width * _signatureScale).round();
+            final newH = (signatureImg.height * _signatureScale).round();
+            signatureImg = img.copyResize(signatureImg, width: newW, height: newH);
+          }
+          final adjustedSigX = (_signaturePosition.dx * scaleX).toInt();
+          final adjustedSigY = (_signaturePosition.dy * scaleY).toInt();
           img.compositeImage(
             backgroundImage,
             signatureImg,
-            dstX: _signaturePosition.dx.toInt(),
-            dstY: _signaturePosition.dy.toInt(),
+            dstX: adjustedSigX,
+            dstY: adjustedSigY,
           );
         }
       }

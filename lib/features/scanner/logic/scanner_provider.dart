@@ -32,7 +32,8 @@ class ScannerProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      _images = await repository.getAllImages();
+      // تحميل الكل بما فيهم المحذوفات لتظهر في سلة المهملات
+      _images = await repository.getAllImages(includeDeleted: true);
     } catch (e) {
       _errorMessage = 'فشل تحميل الصور';
     }
@@ -54,10 +55,8 @@ class ScannerProvider extends ChangeNotifier {
           title: 'مسح ${_images.length + 1}',
         );
         await repository.saveImage(newImage);
-        
-        // إعادة تحميل القائمة للحصول على id الصحيح
+        // إعادة تحميل القائمة للحصول على id صحيح
         await loadImages();
-        
         _errorMessage = null;
         notifyListeners();
       }
@@ -86,10 +85,7 @@ class ScannerProvider extends ChangeNotifier {
           title: result.files.single.name,
         );
         await repository.saveImage(newImage);
-        
-        // إعادة تحميل القائمة للحصول على id الصحيح
         await loadImages();
-        
         notifyListeners();
       }
     } catch (e) {

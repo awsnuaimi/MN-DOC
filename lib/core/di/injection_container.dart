@@ -4,6 +4,7 @@ import '../../features/settings/data/repositories/profile_repository.dart';
 import '../../features/settings/logic/settings_provider.dart';
 import '../../features/scanner/data/repositories/scanner_repository.dart';
 import '../../features/scanner/logic/scanner_provider.dart';
+import '../../features/editor/logic/editor_provider.dart'; // أضف
 
 final sl = GetIt.instance;
 
@@ -24,5 +25,9 @@ Future<void> initDependencies() async {
 
   sl.registerFactory<ScannerProvider>(
     () => ScannerProvider(repository: sl()),
+  );
+
+  sl.registerFactory<EditorProvider>( // أضف
+    () => EditorProvider(),
   );
 }
