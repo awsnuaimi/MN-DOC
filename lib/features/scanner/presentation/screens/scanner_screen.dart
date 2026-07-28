@@ -1,8 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../logic/scanner_provider.dart';
-import 'dart:io';
 
 class ScannerScreen extends StatelessWidget {
   const ScannerScreen({super.key});
@@ -68,7 +68,7 @@ class ScannerScreen extends StatelessWidget {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          // إذا كان الملف PDF يمكن عرض أيقونة بدلاً من الصورة
+                          // عرض الصورة أو أيقونة PDF
                           image.filePath.toLowerCase().endsWith('.pdf')
                               ? const Center(
                                   child: Icon(Icons.picture_as_pdf,
@@ -97,7 +97,22 @@ class ScannerScreen extends StatelessWidget {
                             right: 4,
                             child: IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => provider.deleteImage(index),
+                              onPressed: () {
+                                // استخدام softDeleteImage مع SnackBar للتراجع
+                                final imgId = image.id;
+                                if (imgId != null) {
+                                  provider.softDeleteImage(imgId);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text('تم نقل المستند إلى سلة المهملات'),
+                                      action: SnackBarAction(
+                                        label: 'تراجع',
+                                        onPressed: () => provider.restoreImage(imgId),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
                             ),
                           ),
                         ],
