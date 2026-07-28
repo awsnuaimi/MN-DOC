@@ -17,18 +17,9 @@ class AppShell extends StatelessWidget {
           initialLocation: index == navigationShell.currentIndex,
         ),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'الرئيسية',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.document_scanner),
-            label: 'الماسح',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'الإعدادات',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'الرئيسية'),
+          BottomNavigationBarItem(icon: Icon(Icons.document_scanner_rounded), label: 'الماسح'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings_rounded), label: 'الإعدادات'),
         ],
       ),
     );

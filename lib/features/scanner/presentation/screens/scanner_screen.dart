@@ -10,32 +10,16 @@ class ScannerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ScannerProvider>();
-
-    if (provider.errorMessage != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(provider.errorMessage!),
-            action: SnackBarAction(
-              label: 'حسناً',
-              onPressed: () => provider.clearError(),
-            ),
-          ),
-        );
-      });
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('الماسح الضوئي'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.attach_file),
+            icon: const Icon(Icons.attach_file_rounded),
             onPressed: () => context.read<ScannerProvider>().pickFile(),
-            tooltip: 'إضافة ملف',
           ),
           IconButton(
-            icon: const Icon(Icons.camera_alt),
+            icon: const Icon(Icons.camera_alt_rounded),
             onPressed: () => _showImageSourceDialog(context),
           ),
         ],
@@ -45,20 +29,25 @@ class ScannerScreen extends StatelessWidget {
           : provider.images.isEmpty
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Text(
-                      'لا توجد صور ممسوحة.\nاضغط على أيقونة الكاميرا للبدء، أو أضف ملفاً من الأيقونة المجاورة.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    padding: const EdgeInsets.all(40),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.document_scanner_outlined, size: 80, color: Colors.grey[400]),
+                        const SizedBox(height: 16),
+                        const Text('لا توجد صور ممسوحة', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                        const SizedBox(height: 8),
+                        const Text('اضغط على أيقونة الكاميرا للبدء', style: TextStyle(color: Colors.grey)),
+                      ],
                     ),
                   ),
                 )
               : GridView.builder(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
                   ),
                   itemCount: provider.images.length,
                   itemBuilder: (context, index) {
@@ -68,16 +57,9 @@ class ScannerScreen extends StatelessWidget {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          // عرض الصورة أو أيقونة PDF
                           image.filePath.toLowerCase().endsWith('.pdf')
-                              ? const Center(
-                                  child: Icon(Icons.picture_as_pdf,
-                                      size: 60, color: Colors.red),
-                                )
-                              : Image.file(
-                                  File(image.filePath),
-                                  fit: BoxFit.cover,
-                                ),
+                              ? Center(child: Icon(Icons.picture_as_pdf_rounded, size: 48, color: Colors.red[300]))
+                              : Image.file(File(image.filePath), fit: BoxFit.cover),
                           Positioned(
                             bottom: 0,
                             left: 0,
@@ -85,34 +67,19 @@ class ScannerScreen extends StatelessWidget {
                             child: Container(
                               color: Colors.black54,
                               padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Text(
-                                image.title,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                              child: Text(image.title, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white)),
                             ),
                           ),
                           Positioned(
                             top: 4,
                             right: 4,
-                            child: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                // استخدام softDeleteImage مع SnackBar للتراجع
-                                final imgId = image.id;
-                                if (imgId != null) {
-                                  provider.softDeleteImage(imgId);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text('تم نقل المستند إلى سلة المهملات'),
-                                      action: SnackBarAction(
-                                        label: 'تراجع',
-                                        onPressed: () => provider.restoreImage(imgId),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
+                            child: CircleAvatar(
+                              backgroundColor: Colors.white,
+                              radius: 16,
+                              child: IconButton(
+                                icon: const Icon(Icons.delete_rounded, size: 16, color: Colors.red),
+                                onPressed: () => provider.softDeleteImage(image.id!),
+                              ),
                             ),
                           ),
                         ],
@@ -128,6 +95,7 @@ class ScannerScreen extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('اختر المصدر'),
+        content: const Text('حدد مصدر الصورة'),
         actions: [
           TextButton(
             onPressed: () {
@@ -136,7 +104,7 @@ class ScannerScreen extends StatelessWidget {
             },
             child: const Text('الكاميرا'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               context.read<ScannerProvider>().pickImage(ImageSource.gallery);
