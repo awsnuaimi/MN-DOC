@@ -24,6 +24,7 @@ class _EditorScreenState extends State<EditorScreen> {
   String? backgroundImagePath;
   int? currentImageId;
   bool _isSaving = false;
+  bool _loadingFailed = false;
 
   @override
   void initState() {
@@ -35,31 +36,59 @@ class _EditorScreenState extends State<EditorScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _loadImagePath(id);
         });
+      } else {
+        setState(() {
+          _loadingFailed = true;
+        });
       }
+    } else {
+      setState(() {
+        _loadingFailed = true;
+      });
     }
   }
 
   void _loadImagePath(int id) async {
     final scannerProvider = context.read<ScannerProvider>();
-    
+
+    if (!mounted) return;
+
+    // تحميل الصور إذا كانت القائمة فارغة
     if (scannerProvider.images.isEmpty) {
       await scannerProvider.loadImages();
     }
-    
+
+    if (!mounted) return;
+
+    // البحث عن الصورة
     final image = scannerProvider.images.firstWhere(
       (img) => img.id == id,
       orElse: () => ScannedImage(filePath: '', title: ''),
     );
-    
-    if (image.filePath.isNotEmpty && mounted) {
+
+    if (!mounted) return;
+
+    if (image.filePath.isNotEmpty) {
+      // التحقق من وجود الملف فعليًا
+      final file = File(image.filePath);
+      if (await file.exists()) {
+        setState(() {
+          backgroundImagePath = image.filePath;
+          _loadingFailed = false;
+        });
+      } else {
+        setState(() {
+          _loadingFailed = true;
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ملف الصورة غير موجود')),
+        );
+      }
+    } else {
       setState(() {
-        backgroundImagePath = image.filePath;
+        _loadingFailed = true;
       });
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('المستند غير موجود')),
-      );
-      Navigator.pop(context);
     }
   }
 
@@ -275,8 +304,38 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Widget _buildBody() {
+    if (_loadingFailed) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            const Text(
+              'تعذر تحميل المستند',
+              style: TextStyle(fontSize: 18),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('رجوع'),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (backgroundImagePath == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('جاري تحميل المستند...'),
+          ],
+        ),
+      );
     }
 
     if (!_isImageFile(backgroundImagePath!)) {
