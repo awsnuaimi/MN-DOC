@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:image_cropper/image_cropper.dart';
 import '../../logic/editor_provider.dart';
 import '../../../scanner/logic/scanner_provider.dart';
+import '../../../scanner/data/models/scanned_image.dart'; // ← أضف هذا السطر
 import '../widgets/signature_pad.dart';
 
 class EditorScreen extends StatefulWidget {
@@ -71,9 +72,7 @@ class _EditorScreenState extends State<EditorScreen> {
     if (!mounted) return;
 
     if (newPath != null) {
-      // تحديث الصورة في المعرض عبر المسار
       final scanner = context.read<ScannerProvider>();
-      // نبحث عن الصورة الأصلية باستخدام المسار القديم
       final oldImage = scanner.images.firstWhere(
         (img) => img.filePath == backgroundImagePath,
         orElse: () => ScannedImage(filePath: '', title: ''),
