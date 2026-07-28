@@ -111,7 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ]),
                 const SizedBox(height: 12),
                 _SettingsGroup(title: 'التفضيلات', children: [
-                  _SettingsRow(label: 'اللغة', trailingText: 'العربية'),
+                  const _SettingsRow(label: 'اللغة', trailingText: 'العربية'),
                   _SettingsToggleRow(
                     label: 'المظهر الداكن',
                     value: themeProvider.themeMode == ThemeMode.dark,
