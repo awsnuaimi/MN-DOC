@@ -16,7 +16,7 @@ class AppShell extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
           child: Container(
-            height: 72,
+            height: 76,
             padding: const EdgeInsets.symmetric(horizontal: 6),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -68,34 +68,41 @@ class _NavItem extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 32,
-              height: 32,
+              width: 30,
+              height: 30,
               decoration: BoxDecoration(
                 color: active ? AppColors.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
               ),
               alignment: Alignment.center,
-              child: Icon(icon, size: 18, color: active ? Colors.white : AppColors.primary.withOpacity(0.3)),
+              child: Icon(icon, size: 17, color: active ? Colors.white : AppColors.primary.withOpacity(0.3)),
             ),
             const SizedBox(height: 2),
             Text(label,
                 style: TextStyle(
                     fontSize: 10,
+                    height: 1.0,
                     fontWeight: FontWeight.bold,
                     color: active ? AppColors.primary : AppColors.primary.withOpacity(0.4))),
-            if (active)
-              Container(
-                margin: const EdgeInsets.only(top: 2),
-                width: 4,
-                height: 4,
-                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-              ),
+            SizedBox(
+              height: 6,
+              child: active
+                  ? Center(
+                      child: Container(
+                        margin: const EdgeInsets.only(top: 2),
+                        width: 4,
+                        height: 4,
+                        decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                      ),
+                    )
+                  : null,
+            ),
           ],
         ),
       ),

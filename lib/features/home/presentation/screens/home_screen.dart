@@ -186,6 +186,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         }
 
         if (documents.isEmpty) {
+          // نعتمد على لون الثيم (onSurface) بدل لون ثابت، حتى يبقى النص/الأيقونة
+          // واضحين بالوضع الداكن والفاتح معاً.
+          final onSurface = Theme.of(context).colorScheme.onSurface;
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -197,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ? Icons.delete_outline_rounded
                           : Icons.description_outlined,
                   size: 80,
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: onSurface.withOpacity(0.2),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -206,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       : filter == 'deleted'
                           ? 'سلة المهملات فارغة'
                           : 'لا توجد مستندات بعد',
-                  style: TextStyle(fontSize: 18, color: AppColors.primary.withOpacity(0.4)),
+                  style: TextStyle(fontSize: 18, color: onSurface.withOpacity(0.4)),
                 ),
               ],
             ),
