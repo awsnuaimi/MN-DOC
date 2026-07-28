@@ -76,24 +76,21 @@ class EditorProvider extends ChangeNotifier {
 
       // رسم النصوص
       for (final textItem in _texts) {
-        // استخدام خط افتراضي (bitmap font) بسيط
         final colorInt = img.ColorRgb8(
           textItem.color.red,
           textItem.color.green,
           textItem.color.blue,
         );
-        // حساب حجم الخط التقريبي (مكتبة image تستخدم pixels)
-        final fontSizePixels = textItem.fontSize.toInt();
-        // رسم النص (يدعم أحرف لاتينية فقط بشكل جيد، العربية قد تظهر مشوهة)
+        // نستخدم خط افتراضي بسيط (يدعم اللاتينية فقط)
         img.drawString(
           backgroundImage,
           textItem.text,
-          font: img.arial24, // خط افتراضي صغير، قد لا يناسب الحجم
+          font: img.arial24,
           x: textItem.position.dx.toInt(),
           y: textItem.position.dy.toInt(),
           color: colorInt,
         );
-        // ملاحظة: لتحسين دعم العربية، يمكن استخدام مكتبة bitmap_font أو إضافة خط مخصص لاحقاً.
+        // لتحسين العربية لاحقاً، سنضيف خط مخصص
       }
 
       // رسم التوقيع
