@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:flutter/services.dart' show rootBundle;
 
 class EditorProvider extends ChangeNotifier {
   final List<TextItem> _texts = [];
@@ -26,24 +25,6 @@ class EditorProvider extends ChangeNotifier {
   double get textSize => _textSize;
   Color _textColor = Colors.black;
   Color get textColor => _textColor;
-
-  // تحميل الخط مرة واحدة
-  static img.BitmapFont? _arabicFont;
-
-  Future<img.BitmapFont?> _loadArabicFont() async {
-    if (_arabicFont != null) return _arabicFont;
-    try {
-      // نسخ الخط من assets إلى ملف مؤقت لاستخدامه مع مكتبة image
-      final byteData = await rootBundle.load('assets/fonts/NotoNaskhArabic.ttf');
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File(p.join(tempDir.path, 'NotoNaskhArabic.ttf'));
-      await tempFile.writeAsBytes(byteData.buffer.asUint8List());
-      _arabicFont = img.TrueTypeFont(tempFile.path, size: 24); // حجم افتراضي، سنغيره لكل نص
-      return _arabicFont;
-    } catch (e) {
-      return null;
-    }
-  }
 
   void addText(String text, Offset position) {
     _texts.add(TextItem(
@@ -92,24 +73,22 @@ class EditorProvider extends ChangeNotifier {
       final backgroundImage = img.decodeImage(backgroundBytes);
       if (backgroundImage == null) return null;
 
-      final font = await _loadArabicFont();
-      if (font != null && font is img.TrueTypeFont) {
-        for (final textItem in _texts) {
-          final colorInt = img.ColorRgb8(
-            textItem.color.red,
-            textItem.color.green,
-            textItem.color.blue,
-          );
-          // نستخدم نسخة من الخط بحجم النص المطلوب
-          final sizedFont = img.TrueTypeFont(font.fontPath, size: textItem.fontSize.toInt());
-          backgroundImage.drawString(
-            textItem.text,
-            font: sizedFont,
-            x: textItem.position.dx.toInt(),
-            y: textItem.position.dy.toInt(),
-            color: colorInt,
-          );
-        }
+      // رسم النصوص باستخدام الخط الافتراضي (يدعم اللاتينية)
+      for (final textItem in _texts) {
+        final colorInt = img.ColorRgb8(
+          textItem.color.red,
+          textItem.color.green,
+          textItem.color.blue,
+        );
+        // img.drawString يتوقع (Image, String, font, x, y, color)
+        img.drawString(
+          backgroundImage,
+          textItem.text,
+          font: img.arial24, // خط افتراضي لاتيني (لا يدعم العربية حاليًا)
+          x: textItem.position.dx.toInt(),
+          y: textItem.position.dy.toInt(),
+          color: colorInt,
+        );
       }
 
       // رسم التوقيع
