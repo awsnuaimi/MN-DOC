@@ -4,6 +4,7 @@ import '../constants/app_colors.dart';
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
+      brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         primary: AppColors.primary,
@@ -15,6 +16,22 @@ class AppTheme {
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primary,
+        brightness: Brightness.dark,
+        primary: AppColors.primary,
+        secondary: AppColors.secondary,
+      ),
+      useMaterial3: true,
+      appBarTheme: const AppBarTheme(
         elevation: 0,
       ),
     );

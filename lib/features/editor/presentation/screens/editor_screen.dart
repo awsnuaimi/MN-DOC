@@ -187,43 +187,48 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // لا نستخدم editor هنا، بل نستخدم context.read أو context.watch عند الحاجة
     return Scaffold(
       appBar: AppBar(
         title: const Text('محرر المستند'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: _shareDocument,
-            tooltip: 'مشاركة',
+            icon: const Icon(Icons.save),
+            onPressed: _isSaving ? null : _saveMergedImage,
+            tooltip: 'حفظ',
           ),
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            onPressed: _exportToPdf,
-            tooltip: 'تصدير إلى PDF',
-          ),
-          if (_isImageFile(backgroundImagePath ?? '')) ...[
-            IconButton(
-              icon: const Icon(Icons.text_fields),
-              onPressed: _showAddTextDialog,
-            ),
-            IconButton(
-              icon: const Icon(Icons.draw),
-              onPressed: _showSignaturePad,
-            ),
-            IconButton(
-              icon: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.save),
-              onPressed: _isSaving ? null : _saveMergedImage,
-            ),
-          ],
         ],
       ),
       body: _buildBody(),
+      bottomNavigationBar: _isImageFile(backgroundImagePath ?? '') &&
+              backgroundImagePath != null
+          ? BottomAppBar(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.text_fields),
+                    onPressed: _showAddTextDialog,
+                    tooltip: 'إضافة نص',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.draw),
+                    onPressed: _showSignaturePad,
+                    tooltip: 'توقيع',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share),
+                    onPressed: _shareDocument,
+                    tooltip: 'مشاركة',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.picture_as_pdf),
+                    onPressed: _exportToPdf,
+                    tooltip: 'PDF',
+                  ),
+                ],
+              ),
+            )
+          : null,
     );
   }
 
@@ -254,7 +259,6 @@ class _EditorScreenState extends State<EditorScreen> {
       );
     }
 
-    // هنا نستخدم editor فعلاً، لذلك نستدعيه
     final editor = context.watch<EditorProvider>();
     return Stack(
       children: [
@@ -300,8 +304,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 padding: const EdgeInsets.all(4),
                 color: Colors.white70,
                 child: Text(item.text,
-                    style:
-                        TextStyle(fontSize: item.fontSize, color: item.color)),
+                    style: TextStyle(fontSize: item.fontSize, color: item.color)),
               ),
             ),
           );
@@ -323,8 +326,7 @@ class _EditorScreenState extends State<EditorScreen> {
               children: [
                 TextField(
                   controller: _textController,
-                  decoration:
-                      const InputDecoration(hintText: 'اكتب النص هنا'),
+                  decoration: const InputDecoration(hintText: 'اكتب النص هنا'),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -355,16 +357,14 @@ class _EditorScreenState extends State<EditorScreen> {
                             setStateDialog(() {});
                           },
                           child: Container(
-                            margin:
-                                const EdgeInsets.symmetric(horizontal: 4),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
                               color: color,
                               shape: BoxShape.circle,
                               border: editor.textColor == color
-                                  ? Border.all(
-                                      color: Colors.black, width: 2)
+                                  ? Border.all(color: Colors.black, width: 2)
                                   : null,
                             ),
                           ),
