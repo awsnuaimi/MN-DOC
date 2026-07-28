@@ -48,7 +48,7 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  void _loadImagePath(int id) async {
+  Future<void> _loadImagePath(int id) async {
     final scannerProvider = context.read<ScannerProvider>();
 
     if (!mounted) return;
@@ -59,6 +59,8 @@ class _EditorScreenState extends State<EditorScreen> {
     }
 
     if (!mounted) return;
+
+    final availableIds = scannerProvider.images.map((img) => img.id).toList();
 
     // البحث عن الصورة
     final image = scannerProvider.images.firstWhere(
@@ -82,13 +84,20 @@ class _EditorScreenState extends State<EditorScreen> {
         });
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ملف الصورة غير موجود')),
+          const SnackBar(content: Text('ملف الصورة غير موجود على القرص')),
         );
       }
     } else {
       setState(() {
         _loadingFailed = true;
       });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'لم يتم العثور على صورة بالمعرف $id. المعرفات المتاحة: $availableIds'),
+        ),
+      );
     }
   }
 
@@ -213,24 +222,24 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  void _shareDocument() async {
+  Future<void> _shareDocument() async {
     if (backgroundImagePath == null) return;
     if (_isImageFile(backgroundImagePath!)) {
       final editor = context.read<EditorProvider>();
       final mergedPath = await editor.saveMergedImage(backgroundImagePath!);
       final fileToShare = mergedPath ?? backgroundImagePath!;
-      Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
+      await Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
     } else {
-      Share.shareXFiles([XFile(backgroundImagePath!)],
+      await Share.shareXFiles([XFile(backgroundImagePath!)],
           text: 'مستند من MN Doc');
     }
   }
 
   Future<void> _cropImage() async {
     if (backgroundImagePath == null) return;
-    CroppedFile? croppedFile = await ImageCropper().cropImage(
+    final CroppedFile? croppedFile = await ImageCropper().cropImage(
       sourcePath: backgroundImagePath!,
-      aspectRatioPresets: [
+      aspectRatioPresets: const [
         CropAspectRatioPreset.ratio4x3,
         CropAspectRatioPreset.ratio16x9,
       ],
