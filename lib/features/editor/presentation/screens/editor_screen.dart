@@ -125,9 +125,25 @@ class _EditorScreenState extends State<EditorScreen> {
       return;
     }
     final editor = context.read<EditorProvider>();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('جاري تجهيز الخط العربي...'), duration: Duration(seconds: 2)),
+      );
+    }
+
     try {
       final bytes = await File(backgroundImagePath!).readAsBytes();
-      final pdf = pw.Document();
+
+      // تحميل خط Tajawal لدعم العربية الصحيح داخل ملف PDF
+      // (يحتاج إنترنت أول مرة فقط، ثم يُخزَّن محلياً على الجهاز)
+      final arabicFont = await PdfGoogleFonts.tajawalRegular();
+      final arabicFontBold = await PdfGoogleFonts.tajawalBold();
+
+      final pdf = pw.Document(
+        theme: pw.ThemeData.withFont(base: arabicFont, bold: arabicFontBold),
+      );
+
       pdf.addPage(pw.Page(
         pageFormat: PdfPageFormat.a4,
         build: (ctx) => pw.Stack(children: [
@@ -137,14 +153,22 @@ class _EditorScreenState extends State<EditorScreen> {
             child: pw.Image(pw.MemoryImage(bytes),
                 fit: pw.BoxFit.contain, width: PdfPageFormat.a4.width, height: PdfPageFormat.a4.height),
           ),
-          ...editor.texts.map((item) => pw.Positioned(
-                left: item.position.dx,
-                top: item.position.dy,
-                child: pw.Text(item.text,
-                    style: pw.TextStyle(
-                        fontSize: item.fontSize,
-                        color: PdfColor(item.color.red / 255, item.color.green / 255, item.color.blue / 255))),
-              )),
+          ...editor.texts.map((item) {
+            final isArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(item.text);
+            return pw.Positioned(
+              left: item.position.dx,
+              top: item.position.dy,
+              child: pw.Text(
+                item.text,
+                textDirection: isArabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
+                style: pw.TextStyle(
+                  font: arabicFont,
+                  fontSize: item.fontSize,
+                  color: PdfColor(item.color.red / 255, item.color.green / 255, item.color.blue / 255),
+                ),
+              ),
+            );
+          }),
           if (editor.signatureBytes != null)
             pw.Positioned(
                 left: editor.signaturePosition.dx,
