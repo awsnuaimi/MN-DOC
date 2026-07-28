@@ -3,117 +3,161 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 
 class AppTheme {
+  static const double buttonHeight = 48;
+  static const double buttonRadius = 12;
+  static const double cardRadius = 16;
+
+  static TextTheme _textTheme(Color base) {
+    return GoogleFonts.tajawalTextTheme().copyWith(
+      displayLarge: GoogleFonts.tajawal(
+          fontSize: 32, fontWeight: FontWeight.w800, height: 1.2, color: base),
+      headlineSmall: GoogleFonts.tajawal(
+          fontSize: 22, fontWeight: FontWeight.w700, height: 1.3, color: base),
+      labelLarge: GoogleFonts.tajawal(
+          fontSize: 16, fontWeight: FontWeight.w500, color: base),
+      bodyMedium: GoogleFonts.tajawal(
+          fontSize: 15, fontWeight: FontWeight.w400, height: 1.6, color: base),
+      bodyLarge: GoogleFonts.tajawal(
+          fontSize: 15, fontWeight: FontWeight.w400, height: 1.6, color: base),
+    );
+  }
+
   static ThemeData get lightTheme {
-    final base = ThemeData.light(useMaterial3: true);
-    return base.copyWith(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        primary: AppColors.primary,
-        secondary: AppColors.secondary,
-        surface: AppColors.surface,
-        error: AppColors.error,
-        brightness: Brightness.light,
-      ),
+    final scheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: Brightness.light,
+      primary: AppColors.primary,
+      secondary: AppColors.secondary,
+      surface: AppColors.surface,
+      error: AppColors.error,
+    );
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: GoogleFonts.tajawalTextTheme(base.textTheme).copyWith(
-        titleLarge: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-        titleMedium: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        bodyLarge: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
-        bodyMedium: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-      ),
+      fontFamily: GoogleFonts.tajawal().fontFamily,
+      textTheme: _textTheme(AppColors.textPrimary),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+        titleTextStyle: GoogleFonts.tajawal(
+            fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
       ),
       cardTheme: CardTheme(
         color: AppColors.surface,
-        elevation: 2,
-        shadowColor: Colors.black26,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        elevation: 3,
+        shadowColor: AppColors.primary.withOpacity(0.08),
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cardRadius),
+          side: const BorderSide(color: AppColors.lightWash),
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w600),
+          minimumSize: const Size.fromHeight(buttonHeight),
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(buttonRadius)),
+          textStyle:
+              GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          minimumSize: const Size.fromHeight(buttonHeight),
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          side: const BorderSide(color: AppColors.border),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(buttonRadius)),
+          textStyle:
+              GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          textStyle: GoogleFonts.tajawal(fontWeight: FontWeight.w700),
+        ),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: MaterialStateProperty.all(Colors.white),
+        trackColor: MaterialStateProperty.resolveWith(
+          (states) => states.contains(MaterialState.selected)
+              ? AppColors.primary
+              : AppColors.lightWash,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.divider)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.primary, width: 2)),
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        fillColor: AppColors.background,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(buttonRadius),
+          borderSide: const BorderSide(color: AppColors.lightWash),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(buttonRadius),
+          borderSide: const BorderSide(color: AppColors.lightWash),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(buttonRadius),
+          borderSide: const BorderSide(color: AppColors.secondary, width: 1.5),
+        ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      tabBarTheme: TabBarTheme(
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.white70,
-        indicatorColor: Colors.white,
-        labelStyle: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.bold),
-        unselectedLabelStyle: GoogleFonts.tajawal(fontSize: 14),
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 4,
-        shape: CircleBorder(),
-      ),
-      dividerTheme: const DividerThemeData(color: AppColors.divider, thickness: 1),
+      dividerTheme:
+          const DividerThemeData(color: AppColors.lightWash, thickness: 1),
     );
   }
 
   static ThemeData get darkTheme {
-    final base = ThemeData.dark(useMaterial3: true);
-    return base.copyWith(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        primary: AppColors.secondary,
-        secondary: AppColors.accent,
-        brightness: Brightness.dark,
-      ),
-      scaffoldBackgroundColor: const Color(0xFF121212),
-      textTheme: GoogleFonts.tajawalTextTheme(base.textTheme).copyWith(
-        titleLarge: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-        bodyLarge: const TextStyle(fontSize: 14, color: Colors.white70),
-      ),
+    final scheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: Brightness.dark,
+      primary: AppColors.secondary,
+      secondary: AppColors.secondary,
+    );
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: AppColors.navyDark,
+      fontFamily: GoogleFonts.tajawal().fontFamily,
+      textTheme: _textTheme(Colors.white),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: AppColors.navyDark,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+        titleTextStyle: GoogleFonts.tajawal(
+            fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
       ),
       cardTheme: CardTheme(
-        color: Colors.grey[850],
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: const Color(0xFF16294F),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(cardRadius)),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Color(0xFF1E1E1E),
-        selectedItemColor: AppColors.accent,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
-      ),
-      tabBarTheme: const TabBarTheme(
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey,
-        indicatorColor: AppColors.accent,
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.secondary,
+          foregroundColor: Colors.white,
+          minimumSize: const Size.fromHeight(buttonHeight),
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(buttonRadius)),
+          textStyle:
+              GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }

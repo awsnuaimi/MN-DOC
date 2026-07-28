@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
@@ -11,7 +13,6 @@ class EditorProvider extends ChangeNotifier {
 
   ImageProvider? _signatureImage;
   ImageProvider? get signatureImage => _signatureImage;
-
   Uint8List? _signatureBytes;
   Uint8List? get signatureBytes => _signatureBytes;
 
@@ -27,19 +28,13 @@ class EditorProvider extends ChangeNotifier {
 
   double _displayWidth = 0;
   double _displayHeight = 0;
-
   void setDisplaySize(double width, double height) {
     _displayWidth = width;
     _displayHeight = height;
   }
 
   void addText(String text, Offset position) {
-    _texts.add(TextItem(
-      text: text,
-      position: position,
-      fontSize: _textSize,
-      color: _textColor,
-    ));
+    _texts.add(TextItem(text: text, position: position, fontSize: _textSize, color: _textColor));
     notifyListeners();
   }
 
@@ -76,22 +71,41 @@ class EditorProvider extends ChangeNotifier {
 
   void addRecognizedTexts(String fullText) {
     if (fullText.isEmpty) return;
-    final lines = fullText.split('\n');
     double yOffset = 100;
-    for (final line in lines) {
+    for (final line in fullText.split('\n')) {
       if (line.trim().isEmpty) {
         yOffset += 30;
         continue;
       }
-      _texts.add(TextItem(
-        text: line.trim(),
-        position: Offset(50, yOffset),
-        fontSize: _textSize,
-        color: _textColor,
-      ));
+      _texts.add(TextItem(text: line.trim(), position: Offset(50, yOffset), fontSize: _textSize, color: _textColor));
       yOffset += 40;
     }
     notifyListeners();
+  }
+
+  /// يرسم عنصر النص عبر محرك نصوص Flutter (TextPainter) بدل خط بيتماب لاتيني —
+  /// هذا ما يسمح بعرض العربية بشكل صحيح (تشكيل واتصال الحروف).
+  Future<img.Image?> _renderTextAsImage(TextItem item) async {
+    await GoogleFonts.pendingFonts();
+    final isArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(item.text);
+    final painter = TextPainter(
+      text: TextSpan(
+        text: item.text,
+        style: GoogleFonts.tajawal(fontSize: item.fontSize, color: item.color, fontWeight: FontWeight.w500),
+      ),
+      textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+    );
+    painter.layout();
+    if (painter.width <= 0 || painter.height <= 0) return null;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    painter.paint(canvas, Offset.zero);
+    final picture = recorder.endRecording();
+    final uiImage = await picture.toImage(painter.width.ceil(), painter.height.ceil());
+    final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) return null;
+    return img.decodeImage(byteData.buffer.asUint8List());
   }
 
   Future<String?> saveMergedImage(String backgroundPath) async {
@@ -102,7 +116,6 @@ class EditorProvider extends ChangeNotifier {
 
       final imgWidth = backgroundImage.width.toDouble();
       final imgHeight = backgroundImage.height.toDouble();
-
       double scaleX = 1.0;
       double scaleY = 1.0;
       if (_displayWidth > 0 && _displayHeight > 0) {
@@ -111,21 +124,12 @@ class EditorProvider extends ChangeNotifier {
       }
 
       for (final textItem in _texts) {
-        final colorInt = img.ColorRgb8(
-          textItem.color.red,
-          textItem.color.green,
-          textItem.color.blue,
-        );
-        final adjustedX = (textItem.position.dx * scaleX).toInt();
-        final adjustedY = (textItem.position.dy * scaleY).toInt();
-        img.drawString(
-          backgroundImage,
-          textItem.text,
-          font: img.arial24,
-          x: adjustedX,
-          y: adjustedY,
-          color: colorInt,
-        );
+        final textImg = await _renderTextAsImage(textItem);
+        if (textImg != null) {
+          final adjustedX = (textItem.position.dx * scaleX).toInt();
+          final adjustedY = (textItem.position.dy * scaleY).toInt();
+          img.compositeImage(backgroundImage, textImg, dstX: adjustedX, dstY: adjustedY);
+        }
       }
 
       if (_signatureBytes != null) {
@@ -138,12 +142,7 @@ class EditorProvider extends ChangeNotifier {
           }
           final adjustedSigX = (_signaturePosition.dx * scaleX).toInt();
           final adjustedSigY = (_signaturePosition.dy * scaleY).toInt();
-          img.compositeImage(
-            backgroundImage,
-            signatureImg,
-            dstX: adjustedSigX,
-            dstY: adjustedSigY,
-          );
+          img.compositeImage(backgroundImage, signatureImg, dstX: adjustedSigX, dstY: adjustedSigY);
         }
       }
 
@@ -163,11 +162,5 @@ class TextItem {
   Offset position;
   double fontSize;
   Color color;
-
-  TextItem({
-    required this.text,
-    required this.position,
-    this.fontSize = 18.0,
-    this.color = Colors.black,
-  });
+  TextItem({required this.text, required this.position, this.fontSize = 18.0, this.color = Colors.black});
 }

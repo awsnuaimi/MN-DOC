@@ -1,35 +1,33 @@
 import 'package:flutter/material.dart';
 
+/// Design tokens من نظام تصميم MN-DOC (Dark blue #0F2C5C + Tajawal).
 class AppColors {
-  // الألوان الأساسية
-  static const primary = Color(0xFF6C63FF); // بنفسجي
-  static const secondary = Color(0xFF3F51B5); // أزرق غامق
-  static const accent = Color(0xFFFF6584); // وردي
-  static const background = Color(0xFFF2F2F7); // رمادي فاتح جدا
-  static const surface = Colors.white;
-  static const error = Color(0xFFE53935);
-  static const textPrimary = Color(0xFF1C1C1E);
-  static const textSecondary = Color(0xFF8E8E93);
-  static const divider = Color(0xFFE5E5EA);
+  static const primary = Color(0xFF0F2C5C);
+  static const secondary = Color(0xFF1E4DB7);
+  static const lightWash = Color(0xFFE8F0FE);
+  static const surface = Color(0xFFFFFFFF);
+  static const background = Color(0xFFF7F9FD);
+  static const navyDark = Color(0xFF0B1F44);
+  static const border = Color(0xFFC8D7F3);
 
-  // تدرجات
-  static const List<Color> gradientPrimary = [
-    Color(0xFF6C63FF),
-    Color(0xFF3F51B5),
+  static const primaryHover = Color(0xFF122F63);
+  static const secondaryHover = Color(0xFF1A46A8);
+  static const softHover = Color(0xFFDBE8FE);
+
+  static const error = Color(0xFFEA4335);
+  static const textPrimary = primary;
+
+  static const gradientPrimary = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primary, secondary],
+  );
+
+  static const List<BoxShadow> cardShadow = [
+    BoxShadow(color: Color(0x140F2C5C), blurRadius: 20, offset: Offset(0, 4)),
   ];
 
-  static const List<Color> gradientAccent = [
-    Color(0xFFFF6584),
-    Color(0xFFFF4D6D),
-  ];
-
-  static const List<Color> gradientTab = [
-    Color(0xFFFFFFFF),
-    Color(0xFFF0F0F5),
-  ];
-
-  static const List<Color> gradientBottomBar = [
-    Color(0xFF6C63FF),
-    Color(0xFF3F51B5),
+  static const List<BoxShadow> primaryButtonShadow = [
+    BoxShadow(color: Color(0x400F2C5C), blurRadius: 20, offset: Offset(0, 8)),
   ];
 }
