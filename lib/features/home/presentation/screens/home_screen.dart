@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../features/scanner/logic/scanner_provider.dart';
 import '../../../../features/scanner/data/models/scanned_image.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/utils/date_formatter.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -56,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               },
             ),
             ListTile(
-              leading: const Icon(Icons.edit_rounded),
+              leading: const Icon(Icons.edit_rounded, color: AppColors.primary),
               title: const Text('إعادة تسمية'),
               onTap: () {
                 Navigator.pop(context);
@@ -64,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               },
             ),
             ListTile(
-              leading: const Icon(Icons.share_rounded),
+              leading: const Icon(Icons.share_rounded, color: AppColors.primary),
               title: const Text('مشاركة'),
               onTap: () {
                 Navigator.pop(context);
@@ -91,7 +93,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  // خيارات خاصة بعنصر بسلة المهملات — استعادة أو حذف نهائي
   void _showDeletedOptions(BuildContext context, ScannedImage image, ScannerProvider provider) {
     showDialog(
       context: context,
@@ -148,6 +149,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         title: const Text('مستنداتي'),
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: Colors.white,
           tabs: const [
             Tab(icon: Icon(Icons.grid_view_rounded), text: 'الكل'),
             Tab(icon: Icon(Icons.star_rounded), text: 'المفضلة'),
@@ -195,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ? Icons.delete_outline_rounded
                           : Icons.description_outlined,
                   size: 80,
-                  color: Colors.grey[400],
+                  color: AppColors.primary.withOpacity(0.2),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -204,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       : filter == 'deleted'
                           ? 'سلة المهملات فارغة'
                           : 'لا توجد مستندات بعد',
-                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 18, color: AppColors.primary.withOpacity(0.4)),
                 ),
               ],
             ),
@@ -225,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildDocumentCard(ScannedImage image, ScannerProvider provider) {
     return GestureDetector(
       onTap: () => image.isDeleted ? _showDeletedOptions(context, image, provider) : _openDocument(image),
-      onLongPress: () => image.isDeleted ? null : _showOptionsDialog(context, image, provider),
+      onLongPress: image.isDeleted ? null : () => _showOptionsDialog(context, image, provider),
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: Stack(
@@ -251,10 +253,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               child: Container(
                 color: Colors.black54,
                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                child: Text(image.title,
-                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(image.title,
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    Text(DateFormatter.timeAgo(image.createdAt),
+                        style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                  ],
+                ),
               ),
             ),
           ],
