@@ -21,13 +21,34 @@ class EditorProvider extends ChangeNotifier {
   double _signatureScale = 1.0;
   double get signatureScale => _signatureScale;
 
+  // إعدادات النص الافتراضية
+  double _textSize = 18.0;
+  double get textSize => _textSize;
+  Color _textColor = Colors.black;
+  Color get textColor => _textColor;
+
   void addText(String text, Offset position) {
-    _texts.add(TextItem(text: text, position: position));
+    _texts.add(TextItem(
+      text: text,
+      position: position,
+      fontSize: _textSize,
+      color: _textColor,
+    ));
     notifyListeners();
   }
 
   void updateTextPosition(int index, Offset newPosition) {
     _texts[index].position = newPosition;
+    notifyListeners();
+  }
+
+  void setTextSize(double size) {
+    _textSize = size;
+    notifyListeners();
+  }
+
+  void setTextColor(Color color) {
+    _textColor = color;
     notifyListeners();
   }
 
@@ -47,7 +68,6 @@ class EditorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // دمج التوقيع فقط مع الصورة
   Future<String?> saveMergedImage(String backgroundPath) async {
     try {
       final backgroundBytes = await File(backgroundPath).readAsBytes();
@@ -80,5 +100,13 @@ class EditorProvider extends ChangeNotifier {
 class TextItem {
   String text;
   Offset position;
-  TextItem({required this.text, required this.position});
+  double fontSize;
+  Color color;
+
+  TextItem({
+    required this.text,
+    required this.position,
+    this.fontSize = 18.0,
+    this.color = Colors.black,
+  });
 }

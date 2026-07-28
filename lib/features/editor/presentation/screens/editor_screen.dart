@@ -118,7 +118,13 @@ class _EditorScreenState extends State<EditorScreen> {
                     child: pw.Text(
                       item.text,
                       style: pw.TextStyle(
-                          fontSize: 14, color: PdfColors.black),
+                        fontSize: item.fontSize,
+                        color: PdfColor(
+                          item.color.red.toDouble() / 255,
+                          item.color.green.toDouble() / 255,
+                          item.color.blue.toDouble() / 255,
+                        ),
+                      ),
                     ),
                   );
                 }),
@@ -148,15 +154,13 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  Future<void> _shareDocument() async {
+  void _shareDocument() async {
     if (backgroundImagePath == null) return;
     final editor = context.read<EditorProvider>();
-    // إذا كان هناك تعديلات محفوظة، شارك الصورة المدمجة
     final mergedPath = await editor.saveMergedImage(backgroundImagePath!);
     final fileToShare = mergedPath ?? backgroundImagePath!;
     if (File(fileToShare).existsSync()) {
-      if (!mounted) return;
-      await Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
+      Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
     }
   }
 
@@ -241,8 +245,13 @@ class _EditorScreenState extends State<EditorScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         color: Colors.white70,
-                        child: Text(item.text,
-                            style: const TextStyle(fontSize: 18)),
+                        child: Text(
+                          item.text,
+                          style: TextStyle(
+                            fontSize: item.fontSize,
+                            color: item.color,
+                          ),
+                        ),
                       ),
                     ),
                   );
@@ -253,29 +262,86 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _showAddTextDialog() {
+    final editor = context.read<EditorProvider>();
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('أضف نصاً'),
-        content: TextField(
-          controller: _textController,
-          decoration: const InputDecoration(hintText: 'اكتب النص هنا'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (_textController.text.isNotEmpty) {
-                context.read<EditorProvider>().addText(
+      builder: (_) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('أضف نصاً'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _textController,
+                  decoration: const InputDecoration(hintText: 'اكتب النص هنا'),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Text('الحجم: '),
+                    Expanded(
+                      child: Slider(
+                        value: editor.textSize,
+                        min: 12,
+                        max: 48,
+                        divisions: 9,
+                        label: editor.textSize.round().toString(),
+                        onChanged: (val) {
+                          editor.setTextSize(val);
+                          setStateDialog(() {});
+                        },
+                      ),
+                    ),
+                    Text(editor.textSize.round().toString()),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Text('اللون: '),
+                    ...Colors.primaries.map((color) => GestureDetector(
+                          onTap: () {
+                            editor.setTextColor(color);
+                            setStateDialog(() {});
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: editor.textColor == color
+                                  ? Border.all(color: Colors.black, width: 2)
+                                  : null,
+                            ),
+                          ),
+                        )),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('إلغاء'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (_textController.text.isNotEmpty) {
+                    editor.addText(
                       _textController.text,
                       const Offset(50, 50),
                     );
-                _textController.clear();
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('إضافة'),
-          ),
-        ],
+                    _textController.clear();
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('إضافة'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
