@@ -8,11 +8,10 @@ import 'package:share_plus/share_plus.dart';
 import 'package:image_cropper/image_cropper.dart';
 import '../../logic/editor_provider.dart';
 import '../../../scanner/logic/scanner_provider.dart';
-import '../../../scanner/data/models/scanned_image.dart';
 import '../widgets/signature_pad.dart';
 
 class EditorScreen extends StatefulWidget {
-  final String? imageId;
+  final String? imageId; // سيكون filePath
   const EditorScreen({super.key, this.imageId});
 
   @override
@@ -22,25 +21,16 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   final TextEditingController _textController = TextEditingController();
   String? backgroundImagePath;
-  int? currentImageId;
   bool _isSaving = false;
   bool _loadingFailed = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.imageId != null) {
-      final id = int.tryParse(widget.imageId!);
-      if (id != null) {
-        currentImageId = id;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _loadImagePath(id);
-        });
-      } else {
-        setState(() {
-          _loadingFailed = true;
-        });
-      }
+    if (widget.imageId != null && widget.imageId!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadImageByPath(widget.imageId!);
+      });
     } else {
       setState(() {
         _loadingFailed = true;
@@ -48,61 +38,27 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  Future<void> _loadImagePath(int id) async {
-    final scannerProvider = context.read<ScannerProvider>();
-
-    if (!mounted) return;
-
-    // تحميل الصور إذا كانت القائمة فارغة
-    if (scannerProvider.images.isEmpty) {
-      await scannerProvider.loadImages();
-    }
-
-    if (!mounted) return;
-
-    final availableIds = scannerProvider.images.map((img) => img.id).toList();
-
-    // البحث عن الصورة
-    final image = scannerProvider.images.firstWhere(
-      (img) => img.id == id,
-      orElse: () => ScannedImage(filePath: '', title: ''),
-    );
-
-    if (!mounted) return;
-
-    if (image.filePath.isNotEmpty) {
-      // التحقق من وجود الملف فعليًا
-      final file = File(image.filePath);
-      if (await file.exists()) {
-        setState(() {
-          backgroundImagePath = image.filePath;
-          _loadingFailed = false;
-        });
-      } else {
-        setState(() {
-          _loadingFailed = true;
-        });
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ملف الصورة غير موجود على القرص')),
-        );
-      }
+  void _loadImageByPath(String filePath) async {
+    final file = File(filePath);
+    if (await file.exists()) {
+      if (!mounted) return;
+      setState(() {
+        backgroundImagePath = filePath;
+        _loadingFailed = false;
+      });
     } else {
+      if (!mounted) return;
       setState(() {
         _loadingFailed = true;
       });
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'لم يتم العثور على صورة بالمعرف $id. المعرفات المتاحة: $availableIds'),
-        ),
+        const SnackBar(content: Text('ملف الصورة غير موجود على الجهاز')),
       );
     }
   }
 
   Future<void> _saveMergedImage() async {
-    if (backgroundImagePath == null || currentImageId == null) return;
+    if (backgroundImagePath == null) return;
     if (!_isImageFile(backgroundImagePath!)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('التعديل متاح للصور فقط')),
@@ -115,18 +71,15 @@ class _EditorScreenState extends State<EditorScreen> {
     if (!mounted) return;
 
     if (newPath != null) {
+      // تحديث الصورة في المعرض عبر المسار
       final scanner = context.read<ScannerProvider>();
+      // نبحث عن الصورة الأصلية باستخدام المسار القديم
       final oldImage = scanner.images.firstWhere(
-        (img) => img.id == currentImageId,
+        (img) => img.filePath == backgroundImagePath,
         orElse: () => ScannedImage(filePath: '', title: ''),
       );
       if (oldImage.id != null) {
-        final updatedImage = ScannedImage(
-          id: oldImage.id,
-          filePath: newPath,
-          title: oldImage.title,
-          createdAt: oldImage.createdAt,
-        );
+        final updatedImage = oldImage.copyWith(filePath: newPath);
         await scanner.updateImage(updatedImage);
       }
       if (!mounted) return;
@@ -151,8 +104,7 @@ class _EditorScreenState extends State<EditorScreen> {
     if (backgroundImagePath == null) return;
     if (!_isImageFile(backgroundImagePath!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('هذا الملف لا يمكن تحريره كصورة، جار مشاركته مباشرة')),
+        const SnackBar(content: Text('هذا الملف لا يمكن تحريره كصورة، جار مشاركته مباشرة')),
       );
       Share.shareXFiles([XFile(backgroundImagePath!)]);
       return;
@@ -222,24 +174,23 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  Future<void> _shareDocument() async {
+  void _shareDocument() async {
     if (backgroundImagePath == null) return;
     if (_isImageFile(backgroundImagePath!)) {
       final editor = context.read<EditorProvider>();
       final mergedPath = await editor.saveMergedImage(backgroundImagePath!);
       final fileToShare = mergedPath ?? backgroundImagePath!;
-      await Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
+      Share.shareXFiles([XFile(fileToShare)], text: 'مستند من MN Doc');
     } else {
-      await Share.shareXFiles([XFile(backgroundImagePath!)],
-          text: 'مستند من MN Doc');
+      Share.shareXFiles([XFile(backgroundImagePath!)], text: 'مستند من MN Doc');
     }
   }
 
   Future<void> _cropImage() async {
     if (backgroundImagePath == null) return;
-    final CroppedFile? croppedFile = await ImageCropper().cropImage(
+    CroppedFile? croppedFile = await ImageCropper().cropImage(
       sourcePath: backgroundImagePath!,
-      aspectRatioPresets: const [
+      aspectRatioPresets: [
         CropAspectRatioPreset.ratio4x3,
         CropAspectRatioPreset.ratio16x9,
       ],
@@ -279,8 +230,7 @@ class _EditorScreenState extends State<EditorScreen> {
         ],
       ),
       body: _buildBody(),
-      bottomNavigationBar: _isImageFile(backgroundImagePath ?? '') &&
-              backgroundImagePath != null
+      bottomNavigationBar: _isImageFile(backgroundImagePath ?? '') && backgroundImagePath != null
           ? BottomAppBar(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -320,10 +270,7 @@ class _EditorScreenState extends State<EditorScreen> {
           children: [
             Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
             const SizedBox(height: 16),
-            const Text(
-              'تعذر تحميل المستند',
-              style: TextStyle(fontSize: 18),
-            ),
+            const Text('تعذر تحميل المستند', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
@@ -414,8 +361,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 padding: const EdgeInsets.all(4),
                 color: Colors.white70,
                 child: Text(item.text,
-                    style: TextStyle(
-                        fontSize: item.fontSize, color: item.color)),
+                    style: TextStyle(fontSize: item.fontSize, color: item.color)),
               ),
             ),
           );
@@ -437,8 +383,7 @@ class _EditorScreenState extends State<EditorScreen> {
               children: [
                 TextField(
                   controller: _textController,
-                  decoration:
-                      const InputDecoration(hintText: 'اكتب النص هنا'),
+                  decoration: const InputDecoration(hintText: 'اكتب النص هنا'),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -469,16 +414,14 @@ class _EditorScreenState extends State<EditorScreen> {
                             setStateDialog(() {});
                           },
                           child: Container(
-                            margin:
-                                const EdgeInsets.symmetric(horizontal: 4),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
                               color: color,
                               shape: BoxShape.circle,
                               border: editor.textColor == color
-                                  ? Border.all(
-                                      color: Colors.black, width: 2)
+                                  ? Border.all(color: Colors.black, width: 2)
                                   : null,
                             ),
                           ),
