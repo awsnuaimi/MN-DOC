@@ -74,6 +74,26 @@ class EditorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void addRecognizedTexts(String fullText) {
+    if (fullText.isEmpty) return;
+    final lines = fullText.split('\n');
+    double yOffset = 100;
+    for (final line in lines) {
+      if (line.trim().isEmpty) {
+        yOffset += 30;
+        continue;
+      }
+      _texts.add(TextItem(
+        text: line.trim(),
+        position: Offset(50, yOffset),
+        fontSize: _textSize,
+        color: _textColor,
+      ));
+      yOffset += 40;
+    }
+    notifyListeners();
+  }
+
   Future<String?> saveMergedImage(String backgroundPath) async {
     try {
       final backgroundBytes = await File(backgroundPath).readAsBytes();

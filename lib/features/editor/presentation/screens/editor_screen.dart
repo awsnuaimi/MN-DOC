@@ -10,6 +10,7 @@ import '../../logic/editor_provider.dart';
 import '../../../scanner/logic/scanner_provider.dart';
 import '../../../scanner/data/models/scanned_image.dart';
 import '../widgets/signature_pad.dart';
+import '../../../../core/services/ocr_service.dart';
 
 class EditorScreen extends StatefulWidget {
   final String? imageId;
@@ -21,6 +22,7 @@ class EditorScreen extends StatefulWidget {
 
 class _EditorScreenState extends State<EditorScreen> {
   final TextEditingController _textController = TextEditingController();
+  final OcrService _ocrService = OcrService();
   String? backgroundImagePath;
   bool _isSaving = false;
   bool _loadingFailed = false;
@@ -119,6 +121,25 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  Future<void> _performOCR() async {
+    if (backgroundImagePath == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('جاري التعرف على النص...')),
+    );
+    final text = await _ocrService.recognizeText(backgroundImagePath!);
+    if (!mounted) return;
+    if (text.isNotEmpty) {
+      context.read<EditorProvider>().addRecognizedTexts(text);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تم التعرف على ${text.split('\n').length} سطراً')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لم يتم العثور على نص في الصورة')),
+      );
+    }
+  }
+
   Future<void> _exportToPdf() async {
     if (backgroundImagePath == null) return;
     if (!_isImageFile(backgroundImagePath!)) {
@@ -181,6 +202,7 @@ class _EditorScreenState extends State<EditorScreen> {
           ? BottomAppBar(child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
               IconButton(icon: const Icon(Icons.text_fields), onPressed: _showAddTextDialog, tooltip: 'إضافة نص'),
               IconButton(icon: const Icon(Icons.draw), onPressed: _showSignaturePad, tooltip: 'توقيع'),
+              IconButton(icon: const Icon(Icons.text_snippet), onPressed: _performOCR, tooltip: 'تعرّف على النص (OCR)'),
               IconButton(icon: const Icon(Icons.share), onPressed: _shareDocument, tooltip: 'مشاركة'),
               IconButton(icon: const Icon(Icons.picture_as_pdf), onPressed: _exportToPdf, tooltip: 'PDF'),
             ]))
@@ -266,6 +288,7 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   void dispose() {
     _textController.dispose();
+    _ocrService.dispose();
     super.dispose();
   }
 }
