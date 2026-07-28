@@ -21,7 +21,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    Future.microtask(() {
+    // تحميل الصور فوراً عند بدء الشاشة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ScannerProvider>().loadImages();
     });
   }
@@ -30,6 +31,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _openDocument(ScannedImage image, ScannerProvider provider) {
+    // التأكد من أن الصورة موجودة
+    if (image.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('المستند غير موجود في قاعدة البيانات')),
+      );
+      return;
+    }
+
+    // التحقق من وجود الملف
+    if (!File(image.filePath).existsSync()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ملف المستند غير موجود')),
+      );
+      return;
+    }
+
+    // الانتقال إلى المحرر مع معرف الصورة
+    context.go('/editor', extra: image.id.toString());
   }
 
   void _showOptionsDialog(BuildContext context, ScannedImage image, ScannerProvider provider) {
@@ -201,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   if (image.isDeleted) {
                     _showDeletedOptions(context, image, provider);
                   } else {
-                    context.go('/editor', extra: image.id.toString());
+                    _openDocument(image, provider);
                   }
                 },
                 onLongPress: () {
@@ -212,13 +234,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Hero(
-                      tag: 'image_${image.id}',
-                      child: Image.file(
-                        File(image.filePath),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                    image.filePath.toLowerCase().endsWith('.pdf')
+                        ? const Center(
+                            child: Icon(Icons.picture_as_pdf, size: 60, color: Colors.red),
+                          )
+                        : Hero(
+                            tag: 'image_${image.id}',
+                            child: Image.file(
+                              File(image.filePath),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                     if (image.isFavorite)
                       const Positioned(
                         top: 8,
