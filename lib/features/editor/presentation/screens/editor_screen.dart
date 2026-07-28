@@ -42,12 +42,10 @@ class _EditorScreenState extends State<EditorScreen> {
   void _loadImagePath(int id) async {
     final scannerProvider = context.read<ScannerProvider>();
     
-    // إذا كانت القائمة فارغة، نحمّل الصور أولاً
     if (scannerProvider.images.isEmpty) {
       await scannerProvider.loadImages();
     }
     
-    // الآن نبحث عن الصورة
     final image = scannerProvider.images.firstWhere(
       (img) => img.id == id,
       orElse: () => ScannedImage(filePath: '', title: ''),
@@ -58,7 +56,6 @@ class _EditorScreenState extends State<EditorScreen> {
         backgroundImagePath = image.filePath;
       });
     } else if (mounted) {
-      // لم يتم العثور على الصورة
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('المستند غير موجود')),
       );
@@ -212,7 +209,7 @@ class _EditorScreenState extends State<EditorScreen> {
         AndroidUiSettings(
             toolbarTitle: 'قص الصورة',
             toolbarColor: Theme.of(context).primaryColor),
-        const IOSUiSettings(title: 'قص الصورة'),
+        const IOSUiSettings(title: 'قص الصورة'), // السطر الذي تم تعديله (يحتوي const الآن)
       ],
     );
     if (croppedFile != null && mounted) {
