@@ -11,10 +11,29 @@ class ScannerScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<ScannerProvider>();
 
+    if (provider.errorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(provider.errorMessage!),
+            action: SnackBarAction(
+              label: 'حسناً',
+              onPressed: () => provider.clearError(),
+            ),
+          ),
+        );
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('الماسح الضوئي'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.attach_file),
+            onPressed: () => context.read<ScannerProvider>().pickFile(),
+            tooltip: 'إضافة ملف',
+          ),
           IconButton(
             icon: const Icon(Icons.camera_alt),
             onPressed: () => _showImageSourceDialog(context),
@@ -24,9 +43,15 @@ class ScannerScreen extends StatelessWidget {
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : provider.images.isEmpty
-              ? const Center(
-                  child: Text(
-                      'لا توجد صور ممسوحة. اضغط على أيقونة الكاميرا للبدء.'),
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Text(
+                      'لا توجد صور ممسوحة.\nاضغط على أيقونة الكاميرا للبدء، أو أضف ملفاً من الأيقونة المجاورة.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    ),
+                  ),
                 )
               : GridView.builder(
                   padding: const EdgeInsets.all(8),
@@ -43,10 +68,16 @@ class ScannerScreen extends StatelessWidget {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.file(
-                            File(image.filePath),
-                            fit: BoxFit.cover,
-                          ),
+                          // إذا كان الملف PDF يمكن عرض أيقونة بدلاً من الصورة
+                          image.filePath.toLowerCase().endsWith('.pdf')
+                              ? const Center(
+                                  child: Icon(Icons.picture_as_pdf,
+                                      size: 60, color: Colors.red),
+                                )
+                              : Image.file(
+                                  File(image.filePath),
+                                  fit: BoxFit.cover,
+                                ),
                           Positioned(
                             bottom: 0,
                             left: 0,
@@ -65,8 +96,7 @@ class ScannerScreen extends StatelessWidget {
                             top: 4,
                             right: 4,
                             child: IconButton(
-                              icon:
-                                  const Icon(Icons.delete, color: Colors.red),
+                              icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () => provider.deleteImage(index),
                             ),
                           ),
