@@ -21,7 +21,6 @@ class EditorProvider extends ChangeNotifier {
   double _signatureScale = 1.0;
   double get signatureScale => _signatureScale;
 
-  // إعدادات النص الافتراضية
   double _textSize = 18.0;
   double get textSize => _textSize;
   Color _textColor = Colors.black;
@@ -68,12 +67,36 @@ class EditorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // دمج التوقيع والنصوص مع الصورة
   Future<String?> saveMergedImage(String backgroundPath) async {
     try {
       final backgroundBytes = await File(backgroundPath).readAsBytes();
       final backgroundImage = img.decodeImage(backgroundBytes);
       if (backgroundImage == null) return null;
 
+      // رسم النصوص
+      for (final textItem in _texts) {
+        // استخدام خط افتراضي (bitmap font) بسيط
+        final colorInt = img.ColorRgb8(
+          textItem.color.red,
+          textItem.color.green,
+          textItem.color.blue,
+        );
+        // حساب حجم الخط التقريبي (مكتبة image تستخدم pixels)
+        final fontSizePixels = textItem.fontSize.toInt();
+        // رسم النص (يدعم أحرف لاتينية فقط بشكل جيد، العربية قد تظهر مشوهة)
+        img.drawString(
+          backgroundImage,
+          textItem.text,
+          font: img.arial24, // خط افتراضي صغير، قد لا يناسب الحجم
+          x: textItem.position.dx.toInt(),
+          y: textItem.position.dy.toInt(),
+          color: colorInt,
+        );
+        // ملاحظة: لتحسين دعم العربية، يمكن استخدام مكتبة bitmap_font أو إضافة خط مخصص لاحقاً.
+      }
+
+      // رسم التوقيع
       if (_signatureBytes != null) {
         final signatureImg = img.decodeImage(_signatureBytes!);
         if (signatureImg != null) {
