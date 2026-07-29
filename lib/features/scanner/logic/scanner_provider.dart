@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_doc_scanner/flutter_doc_scanner.dart';
 import 'dart:io';
 import '../data/models/scanned_image.dart';
 import '../data/repositories/scanner_repository.dart';
@@ -42,6 +43,9 @@ class ScannerProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  bool _isScanning = false;
+  bool get isScanning => _isScanning;
+
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
@@ -56,6 +60,63 @@ class ScannerProvider extends ChangeNotifier {
     }
     _isLoading = false;
     notifyListeners();
+  }
+
+  /// مسح ذكي عبر Google ML Kit Document Scanner API — كشف حواف تلقائي،
+  /// تصحيح منظور، وإمكانية مسح عدة صفحات بجلسة وحدة. مجاني وعلى الجهاز بالكامل.
+  Future<void> scanWithDocScanner({int maxPages = 5}) async {
+    _isScanning = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final dynamic result =
+          await FlutterDocScanner().getScannedDocumentAsImages(page: maxPages);
+
+      final List<String> uris = _extractImageUris(result);
+      if (uris.isEmpty) {
+        _errorMessage = 'لم يتم إتمام المسح';
+      } else {
+        final appDir = await getApplicationDocumentsDirectory();
+        for (var i = 0; i < uris.length; i++) {
+          final sourceFile = _resolveFileFromUri(uris[i]);
+          if (sourceFile == null || !await sourceFile.exists()) continue;
+          final fileName = 'scan_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
+          final savedImage = File('${appDir.path}/$fileName');
+          await sourceFile.copy(savedImage.path);
+          await repository.saveImage(
+            ScannedImage(filePath: savedImage.path, title: 'مسح ${_images.length + i + 1}'),
+          );
+        }
+        await loadImages();
+      }
+    } catch (e) {
+      _errorMessage = 'تعذر إتمام المسح الذكي. جرّب الكاميرا العادية بدلاً منه.';
+    }
+    _isScanning = false;
+    notifyListeners();
+  }
+
+  List<String> _extractImageUris(dynamic result) {
+    if (result is Map) {
+      final imgs = result['images'] ?? result['Uri'];
+      if (imgs is List) return imgs.map((e) => e.toString()).toList();
+      if (imgs is String) return [imgs];
+    }
+    if (result is String) return [result];
+    return [];
+  }
+
+  /// نتائج الحزمة قد تُرجع مسار ملف مباشر أو URI بصيغة file:// — نتعامل مع
+  /// الحالتين دفاعياً بدل الافتراض المسبق لصيغة واحدة.
+  File? _resolveFileFromUri(String uriString) {
+    try {
+      final uri = Uri.parse(uriString);
+      if (uri.scheme == 'file') return File(uri.toFilePath());
+      if (uri.scheme.isEmpty) return File(uriString);
+      return File(uriString);
+    } catch (_) {
+      return File(uriString);
+    }
   }
 
   Future<void> pickImage(ImageSource source) async {
@@ -187,8 +248,6 @@ class ScannerProvider extends ChangeNotifier {
     }
   }
 
-  /// المساحة المحلية الفعلية (بالميجابايت) التي تشغلها كل ملفات المستندات
-  /// على الجهاز — يشمل المهملات لأن ملفاتها لسا موجودة فعلياً على القرص.
   Future<double> calculateUsedStorageMB() async {
     int totalBytes = 0;
     for (final image in _images) {

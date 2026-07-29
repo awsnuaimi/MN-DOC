@@ -20,6 +20,70 @@ class ScannerScreen extends StatelessWidget {
     context.push('/editor', extra: image.filePath);
   }
 
+  void _showScanOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 4),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+              ),
+              title: const Text('مسح ذكي', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('كشف حواف تلقائي وتصحيح منظور'),
+              onTap: () {
+                Navigator.pop(context);
+                context.read<ScannerProvider>().scanWithDocScanner();
+              },
+            ),
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: AppColors.lightWash, borderRadius: BorderRadius.circular(10)),
+                child: Icon(Icons.camera_alt_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+              ),
+              title: const Text('كاميرا عادية'),
+              onTap: () {
+                Navigator.pop(context);
+                context.read<ScannerProvider>().pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: AppColors.lightWash, borderRadius: BorderRadius.circular(10)),
+                child: Icon(Icons.photo_library_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+              ),
+              title: const Text('من المعرض'),
+              onTap: () {
+                Navigator.pop(context);
+                context.read<ScannerProvider>().pickImage(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ScannerProvider>();
@@ -38,11 +102,7 @@ class ScannerScreen extends StatelessWidget {
                 const Expanded(
                   child: Text(
                     'الماسح الضوئي',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
                 IconButton(
@@ -51,13 +111,18 @@ class ScannerScreen extends StatelessWidget {
                   tooltip: 'إضافة ملف',
                 ),
                 IconButton(
-                  icon: const Icon(Icons.camera_alt_rounded, color: Colors.white),
-                  onPressed: () => _showImageSourceDialog(context),
-                  tooltip: 'كاميرا',
+                  icon: const Icon(Icons.add_a_photo_rounded, color: Colors.white),
+                  onPressed: provider.isScanning ? null : () => _showScanOptions(context),
+                  tooltip: 'مسح جديد',
                 ),
               ],
             ),
           ),
+          if (provider.isScanning)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: LinearProgressIndicator(),
+            ),
           Expanded(
             child: provider.isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -68,11 +133,17 @@ class ScannerScreen extends StatelessWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.document_scanner_outlined, size: 80, color: Colors.grey[400]),
+                              Icon(Icons.document_scanner_outlined,
+                                  size: 80, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.25)),
                               const SizedBox(height: 16),
-                              const Text('لا توجد صور ممسوحة', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                              Text('لا توجد صور ممسوحة',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                               const SizedBox(height: 8),
-                              const Text('اضغط على أيقونة الكاميرا للبدء', style: TextStyle(color: Colors.grey)),
+                              Text('اضغط على أيقونة الكاميرا للبدء بمسح ذكي',
+                                  style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4))),
                             ],
                           ),
                         ),
@@ -95,7 +166,12 @@ class ScannerScreen extends StatelessWidget {
                                 fit: StackFit.expand,
                                 children: [
                                   image.filePath.toLowerCase().endsWith('.pdf')
-                                      ? Center(child: Icon(Icons.picture_as_pdf_rounded, size: 48, color: Colors.red[300]))
+                                      ? Container(
+                                          color: AppColors.lightWash,
+                                          child: Center(
+                                              child: Icon(Icons.picture_as_pdf_rounded,
+                                                  size: 44, color: Colors.red[300])),
+                                        )
                                       : Image.file(File(image.filePath), fit: BoxFit.cover),
                                   Positioned(
                                     bottom: 0,
@@ -105,7 +181,8 @@ class ScannerScreen extends StatelessWidget {
                                       color: Colors.black54,
                                       padding: const EdgeInsets.symmetric(vertical: 4),
                                       child: Text(image.title,
-                                          textAlign: TextAlign.center, style: const TextStyle(color: Colors.white)),
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(color: Colors.white, fontSize: 12)),
                                     ),
                                   ),
                                   Positioned(
@@ -126,32 +203,6 @@ class ScannerScreen extends StatelessWidget {
                           );
                         },
                       ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showImageSourceDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('اختر المصدر'),
-        content: const Text('حدد مصدر الصورة'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<ScannerProvider>().pickImage(ImageSource.camera);
-            },
-            child: const Text('الكاميرا'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<ScannerProvider>().pickImage(ImageSource.gallery);
-            },
-            child: const Text('المعرض'),
           ),
         ],
       ),
