@@ -31,8 +31,11 @@ jobs:
       # يُعاد توليده تلقائياً بكل تشغيل، فأي تعديل يدوي عليه لا يثبت.
       - name: Patch minSdkVersion for ML Kit Document Scanner
         run: |
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/' android/app/build.gradle
-          grep -n "minSdkVersion" android/app/build.gradle
+          echo "--- قبل التعديل ---"
+          grep -n "minSdk" android/app/build.gradle || true
+          sed -i -E 's/^([[:space:]]*minSdk(Version)?[[:space:]]*=?[[:space:]]*).*/\1 23/' android/app/build.gradle
+          echo "--- بعد التعديل ---"
+          grep -n "minSdk" android/app/build.gradle || true
 
       - name: Analyze code
         run: flutter analyze --no-fatal-infos
