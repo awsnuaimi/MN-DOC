@@ -1,17 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:image_cropper/image_cropper.dart';
 import '../../logic/editor_provider.dart';
+import '../../logic/pdf_exporter.dart';
 import '../../../scanner/logic/scanner_provider.dart';
 import '../../../scanner/data/models/scanned_image.dart';
 import '../widgets/signature_pad.dart';
+import '../widgets/document_canvas.dart';
+import '../widgets/editor_toolbar.dart';
+import '../widgets/add_text_sheet.dart';
 import '../../../../core/services/ocr_service.dart';
-import '../../../../core/constants/app_colors.dart';
 
 class EditorScreen extends StatefulWidget {
   final String? imageId;
@@ -21,13 +21,10 @@ class EditorScreen extends StatefulWidget {
 }
 
 class _EditorScreenState extends State<EditorScreen> {
-  final TextEditingController _textController = TextEditingController();
   final OcrService _ocrService = OcrService();
   String? backgroundImagePath;
   bool _isSaving = false;
   bool _loadingFailed = false;
-  double displayWidth = 0;
-  double displayHeight = 0;
 
   @override
   void initState() {
@@ -37,6 +34,17 @@ class _EditorScreenState extends State<EditorScreen> {
     } else {
       setState(() => _loadingFailed = true);
     }
+  }
+
+  @override
+  void dispose() {
+    _ocrService.dispose();
+    super.dispose();
+  }
+
+  bool _isImageFile(String path) {
+    final ext = path.split('.').last.toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'bmp'].contains(ext);
   }
 
   void _loadImageByPath(String filePath) async {
@@ -62,7 +70,6 @@ class _EditorScreenState extends State<EditorScreen> {
     }
     setState(() => _isSaving = true);
     final editor = context.read<EditorProvider>();
-    editor.setDisplaySize(displayWidth, displayHeight);
     final newPath = await editor.saveMergedImage(backgroundImagePath!);
     if (!mounted) return;
 
@@ -82,11 +89,6 @@ class _EditorScreenState extends State<EditorScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل الحفظ')));
     }
     setState(() => _isSaving = false);
-  }
-
-  bool _isImageFile(String path) {
-    final ext = path.split('.').last.toLowerCase();
-    return ['jpg', 'jpeg', 'png', 'bmp'].contains(ext);
   }
 
   Future<void> _cropImage() async {
@@ -125,58 +127,13 @@ class _EditorScreenState extends State<EditorScreen> {
       return;
     }
     final editor = context.read<EditorProvider>();
-
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('جاري تجهيز الخط العربي...'), duration: Duration(seconds: 2)),
       );
     }
-
     try {
-      final bytes = await File(backgroundImagePath!).readAsBytes();
-
-      // تحميل خط Tajawal لدعم العربية الصحيح داخل ملف PDF
-      // (يحتاج إنترنت أول مرة فقط، ثم يُخزَّن محلياً على الجهاز)
-      final arabicFont = await PdfGoogleFonts.tajawalRegular();
-      final arabicFontBold = await PdfGoogleFonts.tajawalBold();
-
-      final pdf = pw.Document(
-        theme: pw.ThemeData.withFont(base: arabicFont, bold: arabicFontBold),
-      );
-
-      pdf.addPage(pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        build: (ctx) => pw.Stack(children: [
-          pw.Positioned(
-            left: 0,
-            top: 0,
-            child: pw.Image(pw.MemoryImage(bytes),
-                fit: pw.BoxFit.contain, width: PdfPageFormat.a4.width, height: PdfPageFormat.a4.height),
-          ),
-          ...editor.texts.map((item) {
-            final isArabic = RegExp(r'[\u0600-\u06FF]').hasMatch(item.text);
-            return pw.Positioned(
-              left: item.position.dx,
-              top: item.position.dy,
-              child: pw.Text(
-                item.text,
-                textDirection: isArabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
-                style: pw.TextStyle(
-                  font: arabicFont,
-                  fontSize: item.fontSize,
-                  color: PdfColor(item.color.red / 255, item.color.green / 255, item.color.blue / 255),
-                ),
-              ),
-            );
-          }),
-          if (editor.signatureBytes != null)
-            pw.Positioned(
-                left: editor.signaturePosition.dx,
-                top: editor.signaturePosition.dy,
-                child: pw.Image(pw.MemoryImage(editor.signatureBytes!), width: 150)),
-        ]),
-      ));
-      await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+      await PdfExporter.exportImageWithOverlays(imagePath: backgroundImagePath!, editor: editor);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل التصدير: $e')));
     }
@@ -193,66 +150,46 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  void _showSignaturePad() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('توقيعك'),
+        content: SignaturePadWidget(onSignatureSaved: (image, bytes) {
+          context.read<EditorProvider>().setSignature(image, bytes);
+        }),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final showToolbar = _isImageFile(backgroundImagePath ?? '') && backgroundImagePath != null;
     return Scaffold(
       appBar: AppBar(
         title: const Text('محرر المستند'),
         actions: [
           IconButton(icon: const Icon(Icons.crop_rounded), onPressed: _cropImage, tooltip: 'قص الصورة'),
-          IconButton(icon: const Icon(Icons.save_rounded), onPressed: _isSaving ? null : _saveMergedImage, tooltip: 'حفظ'),
+          IconButton(
+              icon: const Icon(Icons.save_rounded),
+              onPressed: _isSaving ? null : _saveMergedImage,
+              tooltip: 'حفظ'),
         ],
       ),
       body: _buildBody(),
-      bottomNavigationBar: _isImageFile(backgroundImagePath ?? '') && backgroundImagePath != null
-          ? SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.lightWash),
-                    boxShadow: AppColors.cardShadow,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildToolbarButton(Icons.text_fields_rounded, 'نص', _showAddTextDialog),
-                      _buildToolbarButton(Icons.draw_rounded, 'توقيع', _showSignaturePad),
-                      _buildToolbarButton(Icons.text_snippet_rounded, 'OCR', _performOCR),
-                      _buildToolbarButton(Icons.share_rounded, 'مشاركة', _shareDocument),
-                      _buildToolbarButton(Icons.picture_as_pdf_rounded, 'PDF', _exportToPdf, active: true),
-                    ],
-                  ),
-                ),
+      bottomNavigationBar: showToolbar
+          ? EditorToolbar(actions: [
+              ToolbarAction(
+                icon: Icons.text_fields_rounded,
+                label: 'نص',
+                onTap: () => AddTextSheet.show(context, context.read<EditorProvider>()),
               ),
-            )
+              ToolbarAction(icon: Icons.draw_rounded, label: 'توقيع', onTap: _showSignaturePad),
+              ToolbarAction(icon: Icons.text_snippet_rounded, label: 'OCR', onTap: _performOCR),
+              ToolbarAction(icon: Icons.share_rounded, label: 'مشاركة', onTap: _shareDocument),
+              ToolbarAction(icon: Icons.picture_as_pdf_rounded, label: 'PDF', onTap: _exportToPdf, active: true),
+            ])
           : null,
-    );
-  }
-
-  Widget _buildToolbarButton(IconData icon, String label, VoidCallback onTap, {bool active = false}) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: active ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: active ? null : Border.all(color: AppColors.lightWash),
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 18, color: active ? Colors.white : AppColors.primary),
-          const SizedBox(height: 2),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.bold, color: active ? Colors.white : AppColors.primary)),
-        ]),
-      ),
     );
   }
 
@@ -276,118 +213,11 @@ class _EditorScreenState extends State<EditorScreen> {
           const SizedBox(height: 20),
           Text('هذا النوع من الملفات لا يمكن تحريره حالياً', style: TextStyle(fontSize: 18, color: Colors.grey[600])),
           const SizedBox(height: 20),
-          ElevatedButton.icon(onPressed: _shareDocument, icon: const Icon(Icons.share_rounded), label: const Text('مشاركة الملف')),
+          ElevatedButton.icon(
+              onPressed: _shareDocument, icon: const Icon(Icons.share_rounded), label: const Text('مشاركة الملف')),
         ]),
       );
     }
-
-    return LayoutBuilder(builder: (context, constraints) {
-      displayWidth = constraints.maxWidth;
-      displayHeight = constraints.maxHeight;
-      final editor = context.watch<EditorProvider>();
-      return Stack(children: [
-        Image.file(File(backgroundImagePath!), fit: BoxFit.contain, width: double.infinity, height: double.infinity),
-        if (editor.signatureImage != null)
-          Positioned(
-            left: editor.signaturePosition.dx,
-            top: editor.signaturePosition.dy,
-            child: GestureDetector(
-              onPanUpdate: (d) => editor.updateSignaturePosition(
-                  Offset(editor.signaturePosition.dx + d.delta.dx, editor.signaturePosition.dy + d.delta.dy)),
-              child: Image(image: editor.signatureImage!),
-            ),
-          ),
-        ...editor.texts.asMap().entries.map((e) => Positioned(
-            left: e.value.position.dx,
-            top: e.value.position.dy,
-            child: GestureDetector(
-              onPanUpdate: (d) => editor.updateTextPosition(
-                  e.key, Offset(e.value.position.dx + d.delta.dx, e.value.position.dy + d.delta.dy)),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                color: Colors.white70,
-                child: Text(e.value.text, style: TextStyle(fontSize: e.value.fontSize, color: e.value.color)),
-              ),
-            )))
-      ]);
-    });
-  }
-
-  void _showAddTextDialog() {
-    final editor = context.read<EditorProvider>();
-    showDialog(
-        context: context,
-        builder: (_) => StatefulBuilder(
-            builder: (ctx, setStateDialog) => AlertDialog(
-                  title: const Text('أضف نصاً'),
-                  content: Column(mainAxisSize: MainAxisSize.min, children: [
-                    TextField(controller: _textController, decoration: const InputDecoration(hintText: 'اكتب النص هنا')),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      const Text('الحجم: '),
-                      Expanded(
-                        child: Slider(
-                          value: editor.textSize,
-                          min: 12,
-                          max: 48,
-                          divisions: 9,
-                          label: editor.textSize.round().toString(),
-                          onChanged: (v) {
-                            editor.setTextSize(v);
-                            setStateDialog(() {});
-                          },
-                        ),
-                      ),
-                      Text(editor.textSize.round().toString()),
-                    ]),
-                    Row(children: [
-                      const Text('اللون: '),
-                      ...Colors.primaries.map((color) => GestureDetector(
-                            onTap: () {
-                              editor.setTextColor(color);
-                              setStateDialog(() {});
-                            },
-                            child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                    color: color,
-                                    shape: BoxShape.circle,
-                                    border: editor.textColor == color ? Border.all(color: Colors.black, width: 2) : null)),
-                          )),
-                    ]),
-                  ]),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-                    TextButton(
-                        onPressed: () {
-                          if (_textController.text.isNotEmpty) {
-                            editor.addText(_textController.text, const Offset(50, 50));
-                            _textController.clear();
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: const Text('إضافة')),
-                  ],
-                )));
-  }
-
-  void _showSignaturePad() {
-    showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-              title: const Text('توقيعك'),
-              content: SignaturePadWidget(onSignatureSaved: (image, bytes) {
-                context.read<EditorProvider>().setSignature(image, bytes);
-              }),
-            ));
-  }
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    _ocrService.dispose();
-    super.dispose();
+    return DocumentCanvas(imagePath: backgroundImagePath!);
   }
 }
