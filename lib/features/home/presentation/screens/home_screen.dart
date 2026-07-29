@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../features/scanner/logic/scanner_provider.dart';
@@ -8,6 +7,7 @@ import '../../../../features/scanner/data/models/scanned_image.dart';
 import '../../../../features/settings/logic/settings_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/utils/document_opener.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,11 +37,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _openDocument(ScannedImage image) {
-    if (!File(image.filePath).existsSync()) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ملف المستند غير موجود')));
-      return;
-    }
-    context.push('/editor', extra: image.filePath);
+    DocumentOpener.open(context, image.filePath);
   }
 
   void _showOptionsDialog(BuildContext context, ScannedImage image, ScannerProvider provider) {
@@ -407,7 +403,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 }
 
-/// تحية شخصية بالاسم من البروفايل، مع رسالة ترحيبية بسيطة.
 class _GreetingHeader extends StatelessWidget {
   final String greeting;
   const _GreetingHeader({required this.greeting});
@@ -439,7 +434,6 @@ class _GreetingHeader extends StatelessWidget {
   }
 }
 
-/// شريط أفقي للمستندات المثبّتة — تظهر فقط لو فيه عناصر مثبّتة فعلاً.
 class _PinnedSection extends StatelessWidget {
   final List<ScannedImage> images;
   final void Function(ScannedImage) onTap;
