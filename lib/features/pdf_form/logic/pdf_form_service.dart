@@ -34,7 +34,7 @@ class PdfFormService {
 
     for (var i = 0; i < doc.form.fields.count; i++) {
       final field = doc.form.fields[i];
-      final label = field.name;
+      final label = field.name ?? 'حقل ${i + 1}';
 
       if (field is PdfTextBoxField) {
         fields.add(PdfFormFieldInfo(index: i, name: label, type: 'text', currentValue: field.text));
