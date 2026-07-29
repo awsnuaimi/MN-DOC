@@ -34,7 +34,7 @@ class PdfFormService {
 
     for (var i = 0; i < doc.form.fields.count; i++) {
       final field = doc.form.fields[i];
-      final label = field.name ?? 'حقل ${i + 1}';
+      final label = field.name;
 
       if (field is PdfTextBoxField) {
         fields.add(PdfFormFieldInfo(index: i, name: label, type: 'text', currentValue: field.text));
@@ -56,7 +56,7 @@ class PdfFormService {
           type: 'radio',
           currentValue: field.selectedIndex >= 0 ? field.selectedIndex.toString() : '',
           options: List<String>.generate(
-              field.items.count, (j) => field.items[j].value ?? 'خيار ${j + 1}'),
+              field.items.count, (j) => field.items[j].value),
         ));
       }
     }
