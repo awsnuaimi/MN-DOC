@@ -46,7 +46,7 @@ class PdfFormService {
           index: i,
           name: label,
           type: 'combo',
-          currentValue: field.selectedValue ?? '',
+          currentValue: field.selectedValue,
           options: List<String>.generate(field.items.count, (j) => field.items[j].text),
         ));
       } else if (field is PdfRadioButtonListField) {
@@ -55,10 +55,10 @@ class PdfFormService {
           name: label,
           type: 'radio',
           currentValue: field.selectedIndex >= 0 ? field.selectedIndex.toString() : '',
-          options: List<String>.generate(
-              field.items.count, (j) => field.items[j].value),
+          options: List<String>.generate(field.items.count, (j) => field.items[j].value),
         ));
       }
+      // أنواع أخرى (توقيع، قائمة متعددة) غير مدعومة بهاي النسخة — تُتجاهل بأمان
     }
     doc.dispose();
     return fields;
