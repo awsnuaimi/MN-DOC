@@ -5,9 +5,11 @@ import '../../data/models/profile.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/common_button.dart';
+import '../../../scanner/logic/scanner_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -51,9 +53,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -101,15 +103,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _SettingsGroup(title: 'الحساب', children: [
-                  _SettingsRow(
-                    label: profile?.name.isNotEmpty == true ? profile!.name : 'الملف الشخصي',
-                    subtitle: profile?.email,
-                    onTap: _editProfileSheet,
-                  ),
-                  _SettingsRow(label: 'الاشتراك المميز', onTap: () {}),
-                ]),
-                const SizedBox(height: 12),
+                _ProfileCard(profile: profile, onTap: _editProfileSheet),
+                const SizedBox(height: 16),
                 _SettingsGroup(title: 'التفضيلات', children: [
                   const _SettingsRow(label: 'اللغة', trailingText: 'العربية'),
                   _SettingsToggleRow(
@@ -119,6 +114,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         themeProvider.setThemeMode(value ? ThemeMode.dark : ThemeMode.light),
                   ),
                   _SettingsRow(label: 'الإشعارات', onTap: () {}),
+                ]),
+                const SizedBox(height: 12),
+                _SettingsGroup(title: 'التخزين', children: [
+                  const _StorageRow(),
                 ]),
                 const SizedBox(height: 12),
                 _SettingsGroup(title: 'الدعم', children: [
@@ -136,6 +135,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+}
+
+/// بطاقة الملف الشخصي بأعلى الإعدادات — اسم + بريد + دائرة أحرف أولى.
+class _ProfileCard extends StatelessWidget {
+  final Profile? profile;
+  final VoidCallback onTap;
+  const _ProfileCard({required this.profile, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = (profile?.name.isNotEmpty == true) ? profile!.name : 'مستخدم MN Doc';
+    final initials = name.trim().isNotEmpty ? name.trim()[0] : '؟';
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.lightWash),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: AppColors.primary,
+              child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  if (profile?.email.isNotEmpty == true)
+                    Text(profile!.email,
+                        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_left_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// شريط "التخزين المستخدم محلياً" — رقم حقيقي محسوب من ملفات الجهاز فعلاً،
+/// بدون أي افتراض لسعة سحابية أو حصة وهمية.
+class _StorageRow extends StatelessWidget {
+  const _StorageRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<ScannerProvider>();
+    return FutureBuilder<double>(
+      future: provider.calculateUsedStorageMB(),
+      builder: (context, snapshot) {
+        final mb = snapshot.data;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              Icon(Icons.folder_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('المساحة المستخدمة على الجهاز',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 2),
+                    Text(
+                      mb == null ? 'جارِ الحساب...' : '${mb.toStringAsFixed(mb < 1 ? 2 : 1)} MB',
+                      style: TextStyle(
+                          fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -168,7 +255,7 @@ class _SettingsGroup extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.lightWash),
             ),

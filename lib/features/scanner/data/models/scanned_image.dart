@@ -5,6 +5,7 @@ class ScannedImage {
   final DateTime createdAt;
   final bool isFavorite;
   final bool isDeleted;
+  final bool isPinned;
 
   ScannedImage({
     this.id,
@@ -13,6 +14,7 @@ class ScannedImage {
     DateTime? createdAt,
     this.isFavorite = false,
     this.isDeleted = false,
+    this.isPinned = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() => {
@@ -22,6 +24,7 @@ class ScannedImage {
         'createdAt': createdAt.toIso8601String(),
         'isFavorite': isFavorite ? 1 : 0,
         'isDeleted': isDeleted ? 1 : 0,
+        'isPinned': isPinned ? 1 : 0,
       };
 
   factory ScannedImage.fromMap(Map<String, dynamic> map) => ScannedImage(
@@ -33,6 +36,7 @@ class ScannedImage {
             : DateTime.now(),
         isFavorite: (map['isFavorite'] ?? 0) == 1,
         isDeleted: (map['isDeleted'] ?? 0) == 1,
+        isPinned: (map['isPinned'] ?? 0) == 1,
       );
 
   ScannedImage copyWith({
@@ -42,6 +46,7 @@ class ScannedImage {
     DateTime? createdAt,
     bool? isFavorite,
     bool? isDeleted,
+    bool? isPinned,
   }) =>
       ScannedImage(
         id: id ?? this.id,
@@ -50,5 +55,6 @@ class ScannedImage {
         createdAt: createdAt ?? this.createdAt,
         isFavorite: isFavorite ?? this.isFavorite,
         isDeleted: isDeleted ?? this.isDeleted,
+        isPinned: isPinned ?? this.isPinned,
       );
 }

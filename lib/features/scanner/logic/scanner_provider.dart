@@ -13,10 +13,28 @@ class ScannerProvider extends ChangeNotifier {
   ScannerProvider({required this.repository});
 
   List<ScannedImage> _images = [];
-  List<ScannedImage> get images => _images.where((img) => !img.isDeleted).toList();
+
+  String _searchQuery = '';
+  String get searchQuery => _searchQuery;
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
+
+  List<ScannedImage> _applySearch(List<ScannedImage> list) {
+    if (_searchQuery.trim().isEmpty) return list;
+    final q = _searchQuery.trim().toLowerCase();
+    return list.where((img) => img.title.toLowerCase().contains(q)).toList();
+  }
+
+  List<ScannedImage> get images =>
+      _applySearch(_images.where((img) => !img.isDeleted).toList());
 
   List<ScannedImage> get favoriteImages =>
-      _images.where((img) => img.isFavorite && !img.isDeleted).toList();
+      _applySearch(_images.where((img) => img.isFavorite && !img.isDeleted).toList());
+
+  List<ScannedImage> get pinnedImages =>
+      _images.where((img) => img.isPinned && !img.isDeleted).toList();
 
   List<ScannedImage> get deletedImages =>
       _images.where((img) => img.isDeleted).toList();
@@ -32,7 +50,6 @@ class ScannerProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      // تحميل الكل بما فيهم المحذوفات لتظهر في سلة المهملات
       _images = await repository.getAllImages(includeDeleted: true);
     } catch (e) {
       _errorMessage = 'فشل تحميل الصور';
@@ -55,7 +72,6 @@ class ScannerProvider extends ChangeNotifier {
           title: 'مسح ${_images.length + 1}',
         );
         await repository.saveImage(newImage);
-        // إعادة تحميل القائمة للحصول على id صحيح
         await loadImages();
         _errorMessage = null;
         notifyListeners();
@@ -130,6 +146,16 @@ class ScannerProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> togglePin(int id) async {
+    final index = _images.indexWhere((img) => img.id == id);
+    if (index != -1) {
+      final newState = !_images[index].isPinned;
+      await repository.togglePin(id, newState);
+      _images[index] = _images[index].copyWith(isPinned: newState);
+      notifyListeners();
+    }
+  }
+
   Future<void> softDeleteImage(int id) async {
     final index = _images.indexWhere((img) => img.id == id);
     if (index != -1) {
@@ -159,5 +185,18 @@ class ScannerProvider extends ChangeNotifier {
       _images.removeAt(index);
       notifyListeners();
     }
+  }
+
+  /// المساحة المحلية الفعلية (بالميجابايت) التي تشغلها كل ملفات المستندات
+  /// على الجهاز — يشمل المهملات لأن ملفاتها لسا موجودة فعلياً على القرص.
+  Future<double> calculateUsedStorageMB() async {
+    int totalBytes = 0;
+    for (final image in _images) {
+      final file = File(image.filePath);
+      if (await file.exists()) {
+        totalBytes += await file.length();
+      }
+    }
+    return totalBytes / (1024 * 1024);
   }
 }

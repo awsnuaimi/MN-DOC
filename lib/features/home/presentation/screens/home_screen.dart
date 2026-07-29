@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../features/scanner/logic/scanner_provider.dart';
 import '../../../../features/scanner/data/models/scanned_image.dart';
+import '../../../../features/settings/logic/settings_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/date_formatter.dart';
 
@@ -16,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -23,12 +25,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ScannerProvider>().loadImages();
+      context.read<SettingsProvider>().loadProfile();
     });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -42,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _showOptionsDialog(BuildContext context, ScannedImage image, ScannerProvider provider) {
     final isFavorite = image.isFavorite;
+    final isPinned = image.isPinned;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -57,6 +62,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 color: Theme.of(context).dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
+            ),
+            ListTile(
+              leading: Icon(isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                  color: Theme.of(context).colorScheme.primary),
+              title: Text(isPinned ? 'إلغاء التثبيت' : 'تثبيت المستند'),
+              onTap: () {
+                Navigator.pop(context);
+                provider.togglePin(image.id!);
+              },
             ),
             ListTile(
               leading: Icon(isFavorite ? Icons.star_rounded : Icons.star_outline_rounded, color: Colors.amber),
@@ -152,6 +166,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'صباح الخير';
+    if (hour < 17) return 'مساء الخير';
+    return 'مساء الخير';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,19 +187,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ],
         ),
       ),
-      body: Column(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          const _StatsStrip(),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildDocumentsList(filter: 'all'),
-                _buildDocumentsList(filter: 'favorites'),
-                _buildDocumentsList(filter: 'deleted'),
-              ],
-            ),
-          ),
+          _buildDocumentsList(filter: 'all'),
+          _buildDocumentsList(filter: 'favorites'),
+          _buildDocumentsList(filter: 'deleted'),
         ],
       ),
     );
@@ -201,55 +215,102 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             documents = provider.images;
         }
 
-        if (documents.isEmpty) {
-          final onSurface = Theme.of(context).colorScheme.onSurface;
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: onSurface.withOpacity(0.06),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    filter == 'favorites'
-                        ? Icons.star_outline_rounded
-                        : filter == 'deleted'
-                            ? Icons.delete_outline_rounded
-                            : Icons.description_outlined,
-                    size: 40,
-                    color: onSurface.withOpacity(0.35),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  filter == 'favorites'
-                      ? 'لا توجد مفضلات'
-                      : filter == 'deleted'
-                          ? 'سلة المهملات فارغة'
-                          : 'لا توجد مستندات بعد',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: onSurface.withOpacity(0.7)),
-                ),
-                if (filter == 'all') ...[
-                  const SizedBox(height: 6),
-                  Text('اضغط على زر + بالأسفل لمسح أول مستند',
-                      style: TextStyle(fontSize: 13, color: onSurface.withOpacity(0.4))),
-                ],
-              ],
-            ),
-          );
-        }
+        final onSurface = Theme.of(context).colorScheme.onSurface;
 
-        return GridView.builder(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.82),
-          itemCount: documents.length,
-          itemBuilder: (context, index) =>
-              _AnimatedIn(index: index, child: _buildDocumentCard(documents[index], provider)),
+        return CustomScrollView(
+          slivers: [
+            if (filter == 'all') ...[
+              SliverToBoxAdapter(child: _GreetingHeader(greeting: _greeting())),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: provider.setSearchQuery,
+                    decoration: InputDecoration(
+                      hintText: 'ابحث عن مستند...',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: provider.searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close_rounded),
+                              onPressed: () {
+                                _searchController.clear();
+                                provider.setSearchQuery('');
+                              },
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+              ),
+              if (provider.pinnedImages.isNotEmpty && provider.searchQuery.isEmpty)
+                SliverToBoxAdapter(
+                  child: _PinnedSection(
+                    images: provider.pinnedImages,
+                    onTap: _openDocument,
+                    onLongPress: (img) => _showOptionsDialog(context, img, provider),
+                  ),
+                ),
+              if (provider.searchQuery.isEmpty)
+                const SliverToBoxAdapter(child: _StatsStrip()),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Text('كل المستندات',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: onSurface)),
+                ),
+              ),
+            ],
+            if (documents.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 88,
+                        height: 88,
+                        decoration: BoxDecoration(color: onSurface.withOpacity(0.06), shape: BoxShape.circle),
+                        child: Icon(
+                          filter == 'favorites'
+                              ? Icons.star_outline_rounded
+                              : filter == 'deleted'
+                                  ? Icons.delete_outline_rounded
+                                  : Icons.description_outlined,
+                          size: 40,
+                          color: onSurface.withOpacity(0.35),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        provider.searchQuery.isNotEmpty
+                            ? 'ما في نتائج لـ "${provider.searchQuery}"'
+                            : filter == 'favorites'
+                                ? 'لا توجد مفضلات'
+                                : filter == 'deleted'
+                                    ? 'سلة المهملات فارغة'
+                                    : 'لا توجد مستندات بعد',
+                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: onSurface.withOpacity(0.7)),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.82),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) =>
+                        _AnimatedIn(index: index, child: _buildDocumentCard(documents[index], provider)),
+                    childCount: documents.length,
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );
@@ -269,7 +330,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     child: Center(child: Icon(Icons.picture_as_pdf_rounded, size: 44, color: Colors.red[300])),
                   )
                 : Image.file(File(image.filePath), fit: BoxFit.cover),
-
             Positioned(
               bottom: 0,
               left: 0,
@@ -285,7 +345,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
               ),
             ),
-
+            if (image.isPinned)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                  child: const Icon(Icons.push_pin, size: 12, color: Colors.white),
+                ),
+              ),
             if (image.isFavorite)
               Positioned(
                 top: 8,
@@ -296,10 +365,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   child: const Icon(Icons.star_rounded, size: 14, color: Colors.white),
                 ),
               ),
-
             if (!image.isDeleted)
               Positioned(
-                top: 4,
+                bottom: 44,
                 left: 4,
                 child: Material(
                   color: Colors.black38,
@@ -314,7 +382,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                 ),
               ),
-
             Positioned(
               bottom: 8,
               left: 10,
@@ -340,7 +407,111 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 }
 
-/// شريط إحصائيات صغير أعلى الشاشة الرئيسية.
+/// تحية شخصية بالاسم من البروفايل، مع رسالة ترحيبية بسيطة.
+class _GreetingHeader extends StatelessWidget {
+  final String greeting;
+  const _GreetingHeader({required this.greeting});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        final name = settings.profile?.name.trim();
+        final displayName = (name != null && name.isNotEmpty) ? name.split(' ').first : null;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                displayName != null ? '$greeting، $displayName' : greeting,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 4),
+              Text('جاهز تمسح مستنداتك اليوم؟',
+                  style: TextStyle(
+                      fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// شريط أفقي للمستندات المثبّتة — تظهر فقط لو فيه عناصر مثبّتة فعلاً.
+class _PinnedSection extends StatelessWidget {
+  final List<ScannedImage> images;
+  final void Function(ScannedImage) onTap;
+  final void Function(ScannedImage) onLongPress;
+  const _PinnedSection({required this.images, required this.onTap, required this.onLongPress});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Row(children: [
+            Icon(Icons.push_pin, size: 15, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 6),
+            Text('مثبّتة',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
+          ]),
+        ),
+        SizedBox(
+          height: 130,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: images.length,
+            itemBuilder: (context, index) {
+              final image = images[index];
+              return GestureDetector(
+                onTap: () => onTap(image),
+                onLongPress: () => onLongPress(image),
+                child: Container(
+                  width: 100,
+                  margin: const EdgeInsets.only(left: 10),
+                  child: Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        image.filePath.toLowerCase().endsWith('.pdf')
+                            ? Container(
+                                color: AppColors.lightWash,
+                                child: const Center(
+                                    child: Icon(Icons.picture_as_pdf_rounded, size: 28, color: Colors.red)),
+                              )
+                            : Image.file(File(image.filePath), fit: BoxFit.cover),
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            color: Colors.black54,
+                            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                            child: Text(image.title,
+                                style: const TextStyle(color: Colors.white, fontSize: 10),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _StatsStrip extends StatelessWidget {
   const _StatsStrip();
 
@@ -355,7 +526,7 @@ class _StatsStrip extends StatelessWidget {
             .length;
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
           child: Row(
             children: [
               Expanded(child: _StatChip(icon: Icons.description_rounded, value: '$total', label: 'الكل')),
@@ -382,10 +553,7 @@ class _StatChip extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: scheme.primary.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: BoxDecoration(color: scheme.primary.withOpacity(0.08), borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
           Icon(icon, size: 18, color: scheme.primary),
@@ -405,7 +573,6 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-/// حركة دخول تدرّجية للبطاقات (fade + slide) بدل الظهور الفوري الجامد.
 class _AnimatedIn extends StatelessWidget {
   final int index;
   final Widget child;

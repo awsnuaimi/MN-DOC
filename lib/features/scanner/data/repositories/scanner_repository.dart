@@ -9,22 +9,11 @@ class ScannerRepository {
 
   Future<List<ScannedImage>> getAllImages({bool includeDeleted = false}) async {
     final db = await localDB.database;
-    final String? where;
-    if (!includeDeleted) {
-      where = 'isDeleted = 0';
-    } else {
-      where = null; // تحميل الكل
-    }
-    final results = await db.query(
-      'scanned_images',
-      where: where,
-      orderBy: 'createdAt DESC',
-    );
+    final String? where = includeDeleted ? null : 'isDeleted = 0';
+    final results = await db.query('scanned_images', where: where, orderBy: 'createdAt DESC');
     return results.map((map) => ScannedImage.fromMap(map)).toList();
   }
 
-  // ... باقي الدوال (saveImage, updateImage, renameImage, toggleFavorite, softDeleteImage, restoreImage, deleteImagePermanently) كما هي بدون تغيير
-  // تأكد من وجودها كاملة من الإصدار السابق
   Future<List<ScannedImage>> getFavoriteImages() async {
     final db = await localDB.database;
     final results = await db.query('scanned_images',
@@ -60,6 +49,12 @@ class ScannerRepository {
   Future<void> toggleFavorite(int id, bool isFavorite) async {
     final db = await localDB.database;
     await db.update('scanned_images', {'isFavorite': isFavorite ? 1 : 0},
+        where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> togglePin(int id, bool isPinned) async {
+    final db = await localDB.database;
+    await db.update('scanned_images', {'isPinned': isPinned ? 1 : 0},
         where: 'id = ?', whereArgs: [id]);
   }
 
