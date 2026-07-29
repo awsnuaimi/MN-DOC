@@ -56,7 +56,7 @@ class AppTheme {
         labelStyle: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700),
         unselectedLabelStyle: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500),
       ),
-      dialogTheme: DialogThemeData(
+      dialogTheme: DialogTheme(
         backgroundColor: AppColors.surface,
         titleTextStyle: GoogleFonts.tajawal(
             fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
@@ -169,7 +169,7 @@ class AppTheme {
         labelStyle: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700),
         unselectedLabelStyle: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500),
       ),
-      dialogTheme: DialogThemeData(
+      dialogTheme: DialogTheme(
         backgroundColor: darkSurface,
         titleTextStyle: const TextStyle(
             fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
