@@ -87,6 +87,19 @@ class ScannerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ScannerProvider>();
+
+    // أي خطأ (فشل مسح، فشل كاميرا...) لازم يظهر فعلياً للمستخدم بدل ما يختفي بصمت.
+    if (provider.errorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(provider.errorMessage!), duration: const Duration(seconds: 5)),
+          );
+          provider.clearError();
+        }
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
